@@ -42,7 +42,7 @@ function renderHome() {
       <div>
         <div class="eyebrow">Software engineering notebook</div>
         <h1>Practical notes from software projects, tools, and experiments.</h1>
-        <p>Robs Software Engineering Notebook collects articles, project write-ups, and engineering ideas from robd.tech in a cleaner static format.</p>
+        <p>Robs Software Engineering Notebook collects articles, project write-ups.</p>
         <div class="hero-actions">
           <a class="button primary" href="#/articles">Browse articles</a>
           <a class="button" href="#/projects">View projects</a>
@@ -56,7 +56,7 @@ function renderHome() {
       <div class="section-head">
         <div>
           <h2>Writing</h2>
-          <p>Posts imported from the WordPress site, with local media links preserved.</p>
+          
         </div>
         <a class="button" href="#/articles">View all</a>
       </div>
@@ -66,7 +66,7 @@ function renderHome() {
       <div class="section-head">
         <div>
           <h2>Projects</h2>
-          <p>Tools, libraries, experiments, and build notes gathered into a more browsable static surface.</p>
+          <p>Tools, libraries, experiments, and build notes gathered into a browsable group.</p>
         </div>
         <a class="button" href="#/projects">More projects</a>
       </div>
@@ -87,7 +87,7 @@ function renderListing(mode = "articles") {
         <div>
           <div class="eyebrow">${isProjects ? "Projects" : "Articles"}</div>
           <h2>${isProjects ? "Project Notes" : "All Writing"}</h2>
-          <p>${isProjects ? "A focused slice of tools, libraries, and experiments from the site." : "Search and filter the imported writing from the WordPress site."}</p>
+          <p>${isProjects ? "A focused slice of tools, libraries, and experiments from the site." : "Search and filter."}</p>
         </div>
       </div>
       <div class="toolbar">
