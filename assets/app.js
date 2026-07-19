@@ -42,7 +42,7 @@ function renderHome() {
       <div>
         <div class="eyebrow">Software engineering notebook</div>
         <h1>Practical notes from software projects, tools, and experiments.</h1>
-        <p>Robs Software Engineering Notebook collects articles, project write-ups.</p>
+        <p>Robs Software Engineering Notebook collects articles, project write-ups, and engineering ideas.</p>
         <div class="hero-actions">
           <a class="button primary" href="#/articles">Browse articles</a>
           <a class="button" href="#/projects">View projects</a>
@@ -56,7 +56,7 @@ function renderHome() {
       <div class="section-head">
         <div>
           <h2>Writing</h2>
-          
+          <p>Posts imported from the WordPress site, with local media links preserved.</p>
         </div>
         <a class="button" href="#/articles">View all</a>
       </div>
@@ -66,7 +66,7 @@ function renderHome() {
       <div class="section-head">
         <div>
           <h2>Projects</h2>
-          <p>Tools, libraries, experiments, and build notes gathered into a browsable group.</p>
+          <p>Tools, libraries, experiments, and build notes.</p>
         </div>
         <a class="button" href="#/projects">More projects</a>
       </div>
@@ -87,7 +87,7 @@ function renderListing(mode = "articles") {
         <div>
           <div class="eyebrow">${isProjects ? "Projects" : "Articles"}</div>
           <h2>${isProjects ? "Project Notes" : "All Writing"}</h2>
-          <p>${isProjects ? "A focused slice of tools, libraries, and experiments from the site." : "Search and filter."}</p>
+          <p>${isProjects ? "A focused slice of tools, libraries, and experiments." : ""}</p>
         </div>
       </div>
       <div class="toolbar">
@@ -127,32 +127,41 @@ function renderListing(mode = "articles") {
   paint();
 }
 
-function renderArticle(slug) {
+async function renderArticle(slug) {
   const post = posts.find((item) => item.slug === slug);
   if (!post) {
     app.innerHTML = `<section class="article-shell"><div class="empty">That page was not found. <a href="#/articles">Browse the archive</a>.</div></section>`;
     return;
   }
+  if (!post.contentHtml) {
+    app.innerHTML = `<section class="article-shell"><div class="empty">Loading article...</div></section>`;
+    const response = await fetch(post.contentFile);
+    if (!response.ok) throw new Error(`Could not load ${post.contentFile}: ${response.status}`);
+    post.contentHtml = await response.text();
+  }
   const cats = (post.categories || []).map((cat) => `<span class="chip">${escapeHtml(cat)}</span>`).join("");
+  const isPage = post.type === "page";
+  const meta = isPage ? "" : `<div class="meta" style="margin-top:24px">${displayDate(post.date)}</div>`;
+  const categoryChips = isPage ? "" : `<div class="chips">${cats}</div>`;
   app.innerHTML = `
     <article class="article article-shell">
       <a class="button" href="#/articles">Back to archive</a>
-      <div class="meta" style="margin-top:24px">${post.type === "page" ? "Page" : displayDate(post.date)}</div>
+      ${meta}
       <h1>${escapeHtml(post.title)}</h1>
-      <div class="chips">${cats}</div>
+      ${categoryChips}
       ${post.hero ? `<img class="article-hero-image" src="${post.hero}" alt="">` : ""}
-      <div class="article-content">${post.content}</div>
+      <div class="article-content">${post.contentHtml}</div>
     </article>
   `;
 }
 
-function route() {
+async function route() {
   const slug = location.hash.replace(/^#\/?/, "").replace(/\/$/, "");
   activeCategory = "All";
   if (!slug || slug === "home") renderHome();
   else if (slug === "articles" || slug === "blog" || slug === "contents" || slug === "categories") renderListing("articles");
   else if (slug === "projects" || slug === "my-portfolio") renderListing("projects");
-  else renderArticle(slug);
+  else await renderArticle(slug);
   window.scrollTo({ top: 0, behavior: "instant" });
   app.focus({ preventScroll: true });
 }
@@ -161,8 +170,8 @@ window.addEventListener("hashchange", route);
 
 async function init() {
   try {
-    const response = await fetch("content.json");
-    if (!response.ok) throw new Error(`Could not load content.json: ${response.status}`);
+    const response = await fetch("content/index.json");
+    if (!response.ok) throw new Error(`Could not load content/index.json: ${response.status}`);
     posts = await response.json();
     pages = posts.filter((post) => post.type === "page");
     articles = posts.filter((post) => post.type === "post");
