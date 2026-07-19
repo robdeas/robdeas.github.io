@@ -1,0 +1,598 @@
+<p>Its time to meet RoboKey, the open-source tool designed to put powerful keyboard automation within reach. a significant leap forward in transforming an Arduino Due into a "robot keyboard." </p>
+
+
+
+<p>Automate sequences effortlessly: whether it's for presentations, demos, or just to boost productivity. You can control a PC with a Stream Deck macro keypad connected to a different PC using an Adruino Due. RoboKey offers complete control. Tired of repetitive keyboard tasks? RoboKey isn't for robots – RoboKey allows you to trigger complex key sequences. Imagine the possibilities: controlling presentations, running demos flawlessly, or even automating complex tasks in your favorite applications. This updated version of RoboKey is even better, thanks to a more robust design with coroutines for smoother operation and enhanced control options like stop, pause, and resume. Whether you're a developer, someone wanting to run software demos, a gamer, or anyone looking to boost their productivity, RoboKey puts the power of automation at your fingertips.</p>
+
+
+
+<p>This is part 2 of my PC App development journey blog. Now everything comes together, and we have a truly useful application. You can find Part 1 here: <a href="#/developing-a-robot-keyboard-pc-controller-interface-with-kotlin-and-arduino/" title="[link to your first blog post]">[link to the first part post]</a></p>
+
+
+
+<p></p>
+
+
+
+<p>The Arduino Due part is documented [here]</p>
+
+
+
+<p>This version does not contain much unit test code as I intend to make testing the subject of another blog post. Due to the heavy use of coroutines and so asynchronous nature of this application some traditional testing tools will not work effectively, so I think it will make an interesting post.</p>
+
+
+
+<h1 class="wp-block-heading"><strong>Recap of Part 1: Building the Foundation</strong></h1>
+
+
+
+<p>In the first part of this series, I introduced RoboKey, an open-source project that transforms an Arduino into a versatile keyboard controller for your PC. We explored the core components of the project:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Arduino Sketch:</strong> This sketch emulates a virtual keyboard, allowing the Arduino (Due) to send keystrokes to a connected computer. It leverages the Arduino's keyboard library to simulate key presses and releases, effectively turning the Arduino into a USB keyboard device.</li>
+
+
+
+<li><strong>Kotlin Client:</strong> This client application facilitates communication between the PC and the Arduino via serial communication. It features both a command-line interface and a user-friendly GUI built with Swing. The client is responsible for sending commands to the Arduino, which then translates those commands into keyboard actions.</li>
+</ul>
+
+
+
+<p>We delved into the key features of RoboKey, including:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Serial Communication:</strong> Establishing a reliable connection between the Windows PC and the Arduino Due using the <code>purejavacomm</code> library. This library allows the Kotlin client to communicate with the Arduino over a serial port.</li>
+
+
+
+<li><strong>File Watching:</strong> Enabling RoboKey to monitor a file for commands, making it compatible with tools like StreamDeck and AutoHotkey. This feature allows users to trigger pre-defined sequences of keystrokes by simply modifying a designated file.</li>
+
+
+
+<li><strong>Local Typing:</strong> RoboKey can use Java's AWT Robot to simulate typing on the local machine for testing purposes. This allows developers to test the functionality of the Kotlin client without needing to involve an Arduino. </li>
+</ul>
+
+
+
+<p>We also highlighted some of the technical aspects of the project, such as:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Configuration with <code>application.yaml</code>:</strong> Using a configuration file to customize RoboKey's settings, for example: the keystroke delays, serial port and its settings such as baud rate.</li>
+
+
+
+<li><strong>Modern Look and Feel with FlatLaf:</strong> Employing the FlatLaf library to give the GUI a modern appearance.</li>
+
+
+
+<li><strong>Serial Communication with PureJavaComm:</strong> Using the PureJavaComm library for robust serial communication.</li>
+
+
+
+<li><strong>Spring Boot Application:</strong> Building the application with Spring Boot, incorporating both GUI and command-line interfaces for user interaction.</li>
+
+
+
+<li><strong>REST Controller:</strong> Providing a simple REST API for sending commands to RoboKey, enabling integration with other applications or web services.</li>
+</ul>
+
+
+
+<p>Finally, we touched upon the use of Kotlin coroutines for managing concurrency and discussed the types of tasks that might be better suited for traditional threads. This first version used traditional threads for some long tasks.</p>
+
+
+
+<h1 class="wp-block-heading"><strong>Enhanced Control with Coroutines and a New Task Pool</strong></h1>
+
+
+
+<p>This new version of RoboKey takes full advantage of Kotlin coroutines to provide a smoother and more responsive user experience. Interestingly, the shift to coroutines was made possible by the very redesign that enabled the implementation of "stop" and "pause" priority commands.</p>
+
+
+
+<p>Previously, RoboKey employed a task-based approach with larger, non-interruptible tasks. To introduce priority commands, I had to break down these tasks into smaller, more manageable units. This granularity, in turn, opened the door for utilizing coroutines throughout the application.</p>
+
+
+
+<p>Coroutines allow for efficient asynchronous programming, enabling RoboKey to handle multiple tasks concurrently without blocking the main thread. This translates to seamless communication with the Arduino and more fluid execution of automated actions.</p>
+
+
+
+<p>To manage these coroutines effectively, I've introduced a new coroutine-based task pool. This task pool allows for:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Organized Task Execution:</strong> Tasks are neatly organized and managed within the pool, ensuring that they run efficiently and without interfering with each other.</li>
+
+
+
+<li><strong>Prioritization (Future):</strong> While not implemented in this version, the task pool is designed to allow for task prioritization in the future. This means that high-priority tasks, such as stopping or pausing a sequence, can be given precedence over lower-priority tasks like typing. This will further enhance RoboKey's responsiveness and control.</li>
+
+
+
+<li><strong>Resource Efficiency:</strong> The task pool optimizes resource usage, ensuring that RoboKey runs smoothly even when handling multiple tasks concurrently.</li>
+</ul>
+
+
+
+<h4 class="wp-block-heading"><strong>Why Not Threads?</strong></h4>
+
+
+
+<p>Before coroutines, using threads for concurrency added significant complexity:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Threads are heavyweight and consume more resources.</li>
+
+
+
+<li>Synchronization issues arise when multiple threads access shared resources.</li>
+
+
+
+<li>Deadlocks and race conditions are harder to debug.</li>
+
+
+
+<li>Mixing coroutines and threads introduces unnecessary complexity and potential blocking issues.</li>
+</ul>
+
+
+
+<p>Coroutines provide a simpler, more efficient alternative:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Lightweight and managed by the Kotlin runtime.</li>
+
+
+
+<li>Avoids blocking threads, enabling smoother concurrency.</li>
+
+
+
+<li>Easier to test and debug with tools like <code>kotlinx-coroutines-test</code>.</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading"><strong>Prioritized Command Handling with Interrupts</strong></h2>
+
+
+
+<p>While the current version of RoboKey doesn't have a full priority system for all tasks, it does prioritize critical commands like "stop" and "pause." These commands manage the task queue and are designed to interrupt any ongoing actions, ensuring that you have immediate control over the automation process.</p>
+
+
+
+<p>In the initial overall design, I considered using Real-Time Operating Systems (RTOS) on the Arduino to manage these priority commands. However, when preparing for the implementation of this phase, I realized a more streamlined solution was possible. By using the interrupt capabilities of the Arduino Due, I could handle priority commands like "pause" and "stop" with efficiency and move the buffering of commnds into the PC RoboKey Application.</p>
+
+
+
+<p>Here's how this interrupt-driven approach works:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Interrupt Signals:</strong> When a priority command like "pause" or "stop" is received, it triggers an interrupt on the Arduino Due. This interrupt mechanism allows the Arduino to immediately suspend its current operation and attend to the priority command.</li>
+
+
+
+<li><strong>Immediate Response:</strong> Interrupts allow the Arduino to respond immediately to these critical commands, regardless of any ongoing tasks. This ensures that critical commands are handled with the utmost urgency, preventing any unintended consequences from delayed responses.</li>
+
+
+
+<li><strong>Status Updates:</strong> The Arduino sends status messages back to the Kotlin client, indicating its current state (busy or ready). This ensures that only one command is processed at a time, preventing conflicts and maintaining order.</li>
+</ul>
+
+
+
+<p>This interrupt-driven design simplifies the overall architecture and eliminates the need for complex RTOS implementations. It ensures that priority commands are handled with the utmost responsiveness, providing a seamless and controlled user experience. All the Arduino needs to do is process one command at a time and send handshake messages for free and busy back to the PC client program while continuing to listen to the serial port for priority commands.</p>
+
+
+
+<p>This shift to a coroutine-based task pool, facilitated by the need for priority commands, marks a significant improvement over the previous thread-based approach. It allows for a more elegant and efficient way to manage concurrent operations within RoboKey, paving the way for greater flexibility and responsiveness in future versions.</p>
+
+
+
+<h2 class="wp-block-heading"><strong>Stop, Pause, and Resume: Taking Control</strong></h2>
+
+
+
+<p>One of the most significant enhancements in this version is the introduction of the "stop," "pause," and "resume" commands. These commands provide granular control over your automated keyboard actions:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Stop:</strong> The "stop" command immediately halts any ongoing automated typing, clearing the buffer and preventing any further output. This is particularly useful when you need to abruptly end a sequence of keystrokes. For instance, if you've initiated a <code>lorem-lines</code> command to simulate typing Lorem Ipsum text, the 'stop' command will immediately halt any further output from the buffer. This prevents the Arduino from continuing to type the remaining text, giving you precise control over the automation process.</li>
+
+
+
+<li><strong>Pause:</strong> The "pause" command temporarily freezes the automated typing mid-sequence without clearing the buffer. This is ideal for situations where you need to pause a demo or presentation to explain a concept before resuming the automated actions seamlessly. Need to temporarily halt your automation without losing your place? The 'pause' command allows you to do just that! Unlike 'stop', which clears the buffer, 'pause' freezes the automated typing mid-sequence. This is incredibly useful for demos or presentations where you might need to pause and explain a concept before resuming the automated actions seamlessly.</li>
+
+
+
+<li><strong>Resume:</strong> The "resume" command picks up the automated typing from where it was paused, ensuring a smooth and uninterrupted flow.</li>
+</ul>
+
+
+
+<p><img class="wp-image-248" style="width: 640px;" src="uploads/2025/01/robokeys-main-seq-diagram-light.png" alt="Diagram showing sequence diagram , to show a command interupted by a preiority command."></p>
+
+
+
+<h2 class="wp-block-heading"><strong>UUID-Driven Communication</strong></h2>
+
+
+
+<p>Commands are now tagged with UUIDs, ensuring robust tracking from the Kotlin controller to the Arduino. The firmware echoes back the UUID with its response, enabling:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Precise matching of commands and responses.</li>
+
+
+
+<li>Simplified debugging and testing.</li>
+</ul>
+
+
+
+<h4 class="wp-block-heading"><strong>Lifecycle of a UUID</strong></h4>
+
+
+
+<ol start="1" class="wp-block-list">
+<li><strong>Generation</strong>: The Kotlin controller generates a UUID for each command.</li>
+
+
+
+<li><strong>Transmission</strong>: The UUID is sent alongside the command.</li>
+
+
+
+<li><strong>Verification</strong>: The response includes the UUID for matching.</li>
+</ol>
+
+
+
+<h4 class="wp-block-heading"><strong>Why UUIDs Are Useful</strong></h4>
+
+
+
+<p>UUIDs provide a crucial mechanism for integration testing and debugging by:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Tying Commands to Responses</strong>: Each response from the Arduino can be uniquely matched to the command that initiated it, ensuring precise tracking and validation.</li>
+
+
+
+<li><strong>Improving Testability</strong>: Integration tests can send a command with a specific UUID, wait for a response with the same UUID, and verify the expected behavior of both the controller and Arduino.</li>
+</ul>
+
+
+
+<h4 class="wp-block-heading"><strong>Example Test Workflow</strong></h4>
+
+
+
+<ol start="1" class="wp-block-list">
+<li>Send a command with a UUID from the Kotlin controller:<code>val uuid = UUID.randomUUID() sendCommand(serialPort, "TEXT:Hello", uuid)</code></li>
+
+
+
+<li>Receive the response on the Arduino:<code>String response = "OK:" + receivedUuid; Serial.println(response);</code></li>
+
+
+
+<li>Match the response back to the original command in the Kotlin controller:<code>val response = waitForResponse(uuid) assertTrue(response.contains("OK"))</code></li>
+</ol>
+
+
+
+<p>This clear mapping ensures reliability in communication, making it easier to debug mismatched responses or failed commands.</p>
+
+
+
+<p></p>
+
+
+
+<h2 class="wp-block-heading"><strong>State Management with Arduino</strong></h2>
+
+
+
+<p>RoboKey uses state management in my Arduino sketch, using:</p>
+
+
+
+<ul class="wp-block-list">
+<li><code>STATE_IDLE</code>: Waiting for a command.</li>
+
+
+
+<li><code>STATE_BUSY</code>: Processing a command.</li>
+
+
+
+<li><code>STATE_PRIORITY</code>: Interrupting normal operations for critical commands.</li>
+</ul>
+
+
+
+<p>This approach ensures:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Safety: Immediate response to <code>STOP</code> or <code>PAUSE</code> commands.</li>
+
+
+
+<li>Efficiency: Preventing command conflicts or race conditions.</li>
+</ul>
+
+
+
+<p></p>
+
+
+
+<h1 class="wp-block-heading"><strong>A User-Friendly GUI</strong></h1>
+
+
+
+<p></p>
+
+
+
+<p>The Kotlin client application features an intuitive graphical user interface that makes it easy to interact with RoboKey. The GUI provides a clear visual representation of the available commands and allows you to:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Send commands to the Arduino with a single click.</li>
+
+
+
+<li>Monitor the status of the connection.</li>
+
+
+
+<li>Configure settings and preferences.</li>
+</ul>
+
+
+
+<h1 class="wp-block-heading"><strong>Why RoboKey?</strong></h1>
+
+
+
+<p>RoboKey addresses a variety of needs and use cases:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Automation:</strong> Automate repetitive keyboard tasks to save time and boost productivity.</li>
+
+
+
+<li><strong>Demos and Presentations:</strong> Deliver flawless demonstrations with pre-programmed, error-free keyboard sequences.</li>
+
+
+
+<li><strong>Macro Keypad Integration:</strong> Integrate with macro keypads like StreamDeck to trigger complex actions on another computer.</li>
+
+
+
+<li><strong>Accessibility:</strong> Provide an alternative input method for users with limited mobility.</li>
+
+
+
+<li><strong>Gaming:</strong> Enhance your gaming experience with custom macros and automated actions. (May be from prohibited using features like this in some games)</li>
+</ul>
+
+
+
+<p>RoboKey's ability to pre-program and execute precise keyboard sequences makes it ideal for demonstrations. You can ensure flawless execution of code examples, complex commands, or any series of keystrokes, allowing your audience to focus on the results rather than worrying about typos or errors during the presentation.</p>
+
+
+
+<p><strong>Error Handling and Recovery</strong></p>
+
+
+
+<p>RoboKey is designed to be robus. It includes comprehensive error handling to gracefully manage unexpected situations</p>
+
+
+
+<p></p>
+
+
+
+<h1 class="wp-block-heading"><strong>Spring Boot Foundation</strong></h1>
+
+
+
+<p>RoboKey is built upon the solid foundation of Spring Boot. This framework simplifies the development process and provides a robust structure for building stand-alone, production-ready Spring applications.</p>
+
+
+
+<p>Here's how RoboKey uses Spring Boot in:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Dependency Management:</strong> Spring Boot manages all the dependencies required for this application, including those for serial communication (<code>purejavacomm</code>), web framework (<code>spring-boot-starter-web</code>), and YAML configuration (<code>spring-boot-starter</code>). This ensures that it has all the necessary libraries and components readily available.</li>
+
+
+
+<li><strong>Embedded Server:</strong> Spring Boot includes an embedded Tomcat server, eliminating the need for external application server deployments. This makes it easy to run RoboKey as a self-contained application.</li>
+
+
+
+<li><strong>Auto-configuration:</strong> Spring Boot auto-configures many common components and settings, reducing the amount of manual configuration required. This simplifies development and allows you to focus on the core logic of this application.</li>
+
+
+
+<li><strong>YAML Configuration:</strong> RoboKey uses YAML files (<code>application.yaml</code>) to configure various aspects of RoboKey, such as the serial port, communication settings, and application behavior. Spring Boot seamlessly integrates with YAML for easy and readable configuration.</li>
+
+
+
+<li><strong>REST Controller:</strong> RoboKey  contains a class with the  <code>@RestController</code> annotation to expose REST endpoints for controlling RoboKey remotely. This allows users to send commands to the application via HTTP requests, enabling integration with other tools and services.</li>
+</ul>
+
+
+
+<p><strong>Example: Spring <code>@RestController</code> for handling commands:</strong></p>
+
+
+
+<p>Kotlin</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">@RestController
+class KeySendController(val keySendService: KeySendService) {
+
+    @GetMapping("/command")
+    fun sendCommand(@RequestParam("text") text: String): Mono&lt;String> {
+        // NOTE: There is more logic for handling commands
+    }
+    // NOTE: There are other endpoints too
+}
+</pre>
+
+
+
+<h2 class="wp-block-heading"><strong>Benefits of using Spring Boot:</strong></h2>
+
+
+
+<p>By utilizing Spring Boot, RoboKey benefits from:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Simplified Development:</strong> Reduced boilerplate code and simplified configuration.</li>
+
+
+
+<li><strong>Rapid Prototyping:</strong> Quickly build and test features with minimal setup.</li>
+
+
+
+<li><strong>Production-Ready Features:</strong> Embedded server, health checks, and metrics for production deployment.</li>
+
+
+
+<li><strong>Testability:</strong> Spring Boot's modularity and dependency injection could help facilitate unit and integration testing.</li>
+</ul>
+
+
+
+<h1 class="wp-block-heading"><strong>Managing Concurrency with a Coroutine-Based Task Pool</strong></h1>
+
+
+
+<p>Probably the main architectural improvement in this version of RoboKey is the introduction of a coroutine-based task pool. The task pool provides a structured and efficient way to manage the concurrent execution of various tasks, such as sending keystrokes, handling commands, and managing communication with the Arduino. Switching to coroutines instead of a few large tasks, allows RoboKey to handle more complex, interruptible tasks, such as pausing mid-sequence or processing priority commands immediately. This asynchronous approach also reduces resource bottlenecks, especially in multi-task scenarios.</p>
+
+
+
+<p><strong>Key Benefits</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Organized Task Execution:</strong> The task pool ensures tasks are executed in an orderly manner, this prevents conflicts and ensures each task has the resources it needs to complete.</li>
+
+
+
+<li><strong>Improved Responsiveness:</strong> By using coroutines, the task pool avoids blocking the main thread, allowing the application to remain responsive to user input and other events even when processing long-running tasks.</li>
+
+
+
+<li><strong>Resource Efficiency:</strong> The task pool efficiently manages system resources, it should help ensure smooth operation even under heavy loads.</li>
+
+
+
+<li><strong>Future-Proof Design:</strong> The task pool is designed with future enhancements in mind, which may help reuse and therefore maintenance.</li>
+</ul>
+
+
+
+<p><strong>Code Example: <code>TaskPoolManager.kt</code></strong></p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">class TaskPoolManager {
+
+    private val tasks = mutableMapOf&lt;TaskName, CompletableFuture&lt;Void>>()
+    private val executor = Executors.newFixedThreadPool(3)
+
+    fun submitTask(taskName: TaskName, block: () -> Unit) {
+        if (tasks.containsKey(taskName)) {
+            println("Task $taskName is already running.")
+            return
+        }
+        val future = CompletableFuture.runAsync(block, executor)
+        tasks[taskName] = future
+    }
+
+    // NOTE: there are other methods for managing tasks
+}
+</pre>
+
+
+
+<p><strong>Explanation</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><code>tasks</code>: A map to store running tasks, allowing for tracking and management of each task.</li>
+
+
+
+<li><code>executor</code>: A fixed thread pool executor to run the tasks concurrently.</li>
+
+
+
+<li><code>submitTask</code>: This function submits a new task to the pool. It takes a <code>TaskName</code> to identify the task and a code block (<code>block</code>) that defines the task's actions.</li>
+</ul>
+
+
+
+<p></p>
+
+
+
+<p></p>
+
+
+
+<h1 class="wp-block-heading"><strong>Call to Action</strong></h1>
+
+
+
+<p>Ready to experience the power of automated keyboard control?</p>
+
+
+
+<p>Download RoboKey and take control of automation on your terms. Share your experiences, ideas, and improvements with the community. RoboKey is open-source under GPL v3, and contributions are welcome!</p>
+
+
+
+<p></p>

@@ -1,0 +1,272 @@
+<p>Structured concurrency for the JVM without the magic.</p>
+
+
+
+<h1 class="wp-block-heading">Why does concurrency in Java have to be so hard?</h1>
+
+
+
+<p>I asked this in my <a href="#/jcoroutines-intro/">original announcement post</a>.<br>Now I’m excited to say:</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h1 class="wp-block-heading">JCoroutines 0.1.0 Released 🎉</h1>
+
+
+
+<p>JCoroutines is now released and available on <a href="https://central.sonatype.com/artifact/tech.robd/jcoroutines?utm_source=chatgpt.com">Maven Central</a>!</p>
+
+
+
+<p><strong>Maven coordinates:</strong></p>
+
+
+
+<pre class="wp-block-code"><code>&lt;dependency>
+  &lt;groupId>tech.robd&lt;/groupId>
+  &lt;artifactId>jcoroutines&lt;/artifactId>
+  &lt;version>0.1.0&lt;/version>
+&lt;/dependency>
+</code></pre>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">About JCoroutines</h2>
+
+
+
+<p>JCoroutines is a lightweight concurrency toolkit for <strong>Java 21+</strong>, inspired by Kotlin coroutines.<br>It provides <strong>structured concurrency</strong> with scopes, cancellation, timeouts, and channels, built on Java’s new <strong>virtual threads</strong>.</p>
+
+
+
+<p>The goal: <strong>make concurrency feel clean and explicit—without needing a heavy reactive framework.</strong></p>
+
+
+
+<h3 class="wp-block-heading">Key features</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Structured task scopes</li>
+
+
+
+<li>Fail-fast cancellation (siblings cancel together)</li>
+
+
+
+<li>Timeout handling</li>
+
+
+
+<li>Channel support with backpressure</li>
+
+
+
+<li>Virtual-thread friendly execution</li>
+</ul>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">Version History</h2>
+
+
+
+<ul class="wp-block-list">
+<li><strong>0.1.0</strong> – Initial release
+<ul class="wp-block-list">
+<li>Core <code>JCoroutineScope</code> API</li>
+
+
+
+<li>Cancellation and timeout support</li>
+
+
+
+<li>Channels with backpressure</li>
+
+
+
+<li>Full JUnit 5 test suite</li>
+</ul>
+</li>
+</ul>
+
+
+
+<p>(Version history will be expanded here with each release.)</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">Links</h2>
+
+
+
+<ul class="wp-block-list">
+<li>📦 <a href="https://central.sonatype.com/artifact/tech.robd/jcoroutines?utm_source=chatgpt.com">Maven Central</a></li>
+
+
+
+<li>💻 <a href="https://github.com/robdeas/jcoroutines">Source code (GitHub)</a></li>
+
+
+
+<li>📖 <a>Project page</a></li>
+
+
+
+<li>✍️ <a href="#/jcoroutines-intro/">Intro blog post</a></li>
+</ul>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h1 class="wp-block-heading">Getting Started with JCoroutines</h1>
+
+
+
+<h3 class="wp-block-heading">Requirements</h3>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Java 21+</strong> (uses Virtual Threads)</li>
+
+
+
+<li>No additional runtime dependencies</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Installation (Gradle)</h3>
+
+
+
+<pre class="wp-block-code"><code>dependencies {
+    implementation("tech.robd:jcoroutines:0.1.0")
+}
+</code></pre>
+
+
+
+<h3 class="wp-block-heading">Installation (Maven)</h3>
+
+
+
+<pre class="wp-block-code"><code>&lt;dependency>
+  &lt;groupId>tech.robd&lt;/groupId>
+  &lt;artifactId>jcoroutines&lt;/artifactId>
+  &lt;version>0.1.0&lt;/version>
+&lt;/dependency>
+</code></pre>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">Quick Start Examples</h2>
+
+
+
+<h3 class="wp-block-heading">Basic async</h3>
+
+
+
+<pre class="wp-block-code"><code>import tech.robd.jcoroutines.*;
+
+JCoroutineHandle&lt;String> handle = Coroutines.async(suspend -> {
+    suspend.delay(100);
+    return "Hello, Coroutines!";
+});
+
+System.out.println(handle.join());
+</code></pre>
+
+
+
+<h3 class="wp-block-heading">Structured concurrency</h3>
+
+
+
+<pre class="wp-block-code"><code>try (var scope = new StandardCoroutineScope()) {
+    var h1 = scope.async(suspend -> fetchData(suspend, "url1"));
+    var h2 = scope.async(suspend -> fetchData(suspend, "url2"));
+
+    System.out.println(h1.join());
+    System.out.println(h2.join());
+} // automatic cleanup &amp; cancellation
+</code></pre>
+
+
+
+<h3 class="wp-block-heading">Channels</h3>
+
+
+
+<pre class="wp-block-code"><code>try (var scope = new StandardCoroutineScope()) {
+    var channel = InteropChannel.&lt;String>buffered(10);
+
+    scope.launch(suspend -> {
+        for (int i = 0; i &lt; 5; i++) {
+            channel.send(suspend, "Message " + i);
+            suspend.yieldAndPause(Duration.ofMillis(100));
+        }
+        channel.close();
+    });
+
+    scope.launch(suspend ->
+        channel.forEach(suspend, (ctx, msg) ->
+            System.out.println("Received: " + msg.orElse("null"))
+        )
+    );
+}
+</code></pre>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">Key Concepts</h2>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Suspend Functions</strong> – always take a <code>SuspendContext</code></li>
+
+
+
+<li><strong>Cooperative Scheduling</strong> – <code>yield()</code>, <code>yieldAndPause()</code>, <code>delay()</code></li>
+
+
+
+<li><strong>Cancellation</strong> – explicit checks via <code>suspend.checkCancellation()</code></li>
+
+
+
+<li><strong>Resource Management</strong> – use try-with-resources for scopes</li>
+</ul>

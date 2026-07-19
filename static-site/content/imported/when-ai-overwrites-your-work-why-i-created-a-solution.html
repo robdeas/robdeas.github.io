@@ -1,0 +1,100 @@
+<h1>When AI Overwrites Your Work: Why I Created Robokeytags</h1>
+A few months ago while I was experimenting with AI agents, I asked an AI assistant to generate a new REST controller in my Spring Boot app. It worked. Clean, fast, perfect. Until a few weeks later weeks later - when I lazily asked for a simple change and it broke all my carefully written error-handling logic.
+
+Gone. Just like that. Replaced with a generic `@Valid` and a try-catch that missed every edge case I'd accounted for.
+
+Another time, I used AI to scaffold a SvelteKit component. Then I spent hours refining it - improving animations, accessibility, and behaviour. Later, I asked the AI to add a new property.
+
+It gave me a new component. A shiny, default-styled component. Not mine.
+<h2>The Real Problem With AI-Assisted Coding</h2>
+We’ve built amazing tools. But we're still working without a map.
+
+There's no standard way to tell tools (AI or otherwise):
+<ul>
+ 	<li> "This section has special rules - understand its structure"</li>
+ 	<li> "Here's context that humans need to know"</li>
+ 	<li> "Remember this analysis for next time"</li>
+ 	<li> “This part is mine. Don’t touch it.”</li>
+ 	<li> “Here’s a warning label - you can touch this, but be careful.”</li>
+</ul>
+So I created one.
+<h2>Introducing Robokeytags 🧩</h2>
+Robokeytags is a universal language for code structure using comment tags:
+<h4>🧩 Puzzle Tags = Structural metadata that tools understand</h4>
+Defines regions, boundaries, and edit rules
+Designed for ALL tools - Plop, Spring Boot CLI, AI assistants, etc.
+Like a blueprint: "this piece connects here, be careful there"
+Not about who wrote it, but about what it IS
+<h4>📌 Pin Tags = Human-readable documentation</h4>
+Context, warnings, TODOs, explanations
+For human readers (though AI can write these too!)
+The "why" behind code decisions
+Like persistent sticky notes that never fall off
+<h4>🤖 Robot Tags = AI's persistent memory</h4>
+Confidence levels, detected patterns, suggestions
+Lets AI build understanding across sessions
+Multiple AI agents can collaborate through these
+Like a shared notebook for AI that doesn't get erased
+
+It's language-agnostic, built with plain comments, and designed to work across frontend, backend, configs, and more.
+Here's what it looks like:
+<pre>```ts
+// [🧩 Region: NonEditable: component/props]
+export let title: string;
+export let onClick: () =&gt; void;
+// [/🧩 Region: NonEditable: component/props]
+
+// [🧩 Region: Editable: component/logic]
+// [📌 Note: Animation timing is critical for UX - tested with users]
+// [🤖 pattern-detected: State management using local variables]
+let isOpen = false;
+function toggle() { isOpen = !isOpen; }
+// [/🧩 Region: Editable: component/logic]
+```</pre>
+<h2>The Magic is in the Structure</h2>
+Notice how this:
+
+🧩 tells ANY tool about the code structure
+📌 provides human context (even if AI wrote it)
+🤖 lets AI remember insights between sessions
+
+This isn't just about "AI territory" vs "human territory" - it's about creating shared understanding.
+
+Robokeytags gives you that structure - without needing a new IDE or a heavyweight toolchain. Just tags. Just comments. Just clarity.
+<h2>The Game Changer: Persistent AI Memory</h2>
+The 🤖 tags are revolutionary. Imagine AI agents that:
+<ul>
+ 	<li>Remember their uncertainty: [🤖 confidence-low: Complex auth logic]</li>
+ 	<li>Share discoveries: [🤖 agent:security: SQL injection risk here]</li>
+ 	<li>Build on each other: [🤖 agent:performance: Consider caching]</li>
+</ul>
+Multiple AI agents can now collaborate asynchronously, building shared understanding over time.
+<h2>Why This Matters (to Me)</h2>
+I’m a full-stack developer. I’ve been writing code for over 20 years. I’m equally at home in the backend, the frontend, DevOps pipelines, and architecture discussions. But the most frustrating moments of the last year weren’t compiler errors or runtime bugs - they were moments where AI tools helped me, then hurt me.
+
+All because I couldn’t set clear boundaries.
+
+So this is my answer.
+
+It’s open source. It’s on GitHub. And it’s already integrated into the projects I’m building.
+<h2>Want to Try It?</h2>
+You can start small:
+<ul>
+ 	<li>Add one `[🧩 Region]` around a codegen block.</li>
+ 	<li>Use `[📌 Note]` to add context for your teammates.</li>
+ 	<li>Let AI annotate with `[🤖]` tags that don’t get in your way.</li>
+</ul>
+Then watch your tools evolve from goldfish to elephants – they'll finally remember.
+
+---
+
+You can read the full spec and see real examples at [robokeys.tech](<a href="https://robokeys.tech/articles/puzzlepins">https://robokeys.tech/articles/robokeytags</a>).
+
+Or just grab it from GitHub:
+Automotan Tags on GitHub (<a href="https://github.com/robokeys/automotan-tags">https://github.com/robokeys/robokeytags</a>)
+
+And if this idea resonates with you: share it! Talk to me! Use it! Break it! Improve it!
+
+Automotan Tags is my first step toward making AI development more human-compatible.
+
+I think it’s going to matter.

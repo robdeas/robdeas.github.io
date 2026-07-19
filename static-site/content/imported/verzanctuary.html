@@ -1,0 +1,227 @@
+<h1 class="wp-block-heading">🏛️ Introducing VerZanctuary: A Safe Sanctuary for Your Code Versions</h1>
+
+
+
+<p><em>Published: June 2025 • Author: <a href="https://github.com/robdeas">Rob Deas</a></em></p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">🔥 What Problem Does VerZanctuary Solve?</h3>
+
+
+
+<p>We’ve all been there:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Midway through a tricky refactor, wondering, <em>“What if I need to roll back?”</em></li>
+
+
+
+<li>Letting an AI agent make changes, but unsure <em>what just broke</em>.</li>
+
+
+
+<li>Needing a temporary branch, but not wanting to clutter your Git history.</li>
+</ul>
+
+
+
+<p><strong>VerZanctuary</strong> solves this by creating isolated, timestamped snapshots of your code—<strong>without touching your actual Git repository</strong>.</p>
+
+
+
+<p>You get the safety of version control, the flexibility of scratch workspaces, and a clean Git history. Perfect for experiments, backups, and collaborative AI sessions.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">🧠 How It Works</h3>
+
+
+
+<p>VerZanctuary creates a hidden folder in a <code>project.sanctuary</code> folder called .sanctuary, which is a real Git repo—but managed entirely separately from your working one. It supports:</p>
+
+
+
+<ul class="wp-block-list">
+<li>✅ <strong>Snapshot creation</strong> (<code>verz create</code>)</li>
+
+
+
+<li>🕵️ <strong>Safe inspection</strong> (<code>verz checkout --browse</code>)</li>
+
+
+
+<li>🧪 <strong>Experimental workspaces</strong> (<code>verz checkout --lab</code>)</li>
+
+
+
+<li>🔍 <strong>Diff and compare</strong> (<code>verz diff</code>)</li>
+
+
+
+<li>🧹 <strong>Cleanup</strong> (<code>verz cleanup --keep=5</code>)</li>
+</ul>
+
+
+
+<p>Under the hood, each snapshot becomes a Git branch (e.g., <code>auto-20250612-1034-17-001</code>) stored inside the <code>.sanctuary</code> directory.</p>
+
+
+
+<pre class="wp-block-preformatted">bashCopyEdit<code>$ verz create -s working_state -m "Before experimental refactor"
+✅ Created sanctuary: auto-20250612-1034-17-001
+📍 Location: .myproject.sanctuary/
+</code></pre>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">🛠️ CLI Design: Clikt-Powered Commands</h3>
+
+
+
+<p>VerZanctuary’s CLI is built with <a>Clikt</a>, offering clean, intuitive commands:</p>
+
+
+
+<pre class="wp-block-preformatted">bashCopyEdit<code>verz create                # Take a snapshot
+verz list                  # List all snapshots
+verz checkout &lt;branch&gt;     # Restore a snapshot
+verz diff &lt;branch&gt;         # See what’s changed
+verz cleanup --keep=10     # Keep recent snapshots, remove the rest
+</code></pre>
+
+
+
+<p>Optional flags like <code>--no-git</code>, <code>--lab</code>, <code>--browse</code>, and <code>--ignore-locks</code> offer power-user flexibility.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">🧱 Safety First: Locking and Protection</h3>
+
+
+
+<p>Every operation is guarded by a lock system to prevent accidental corruption from parallel invocations. You can even inspect or forcibly unlock sanctuaries:</p>
+
+
+
+<pre class="wp-block-preformatted">bashCopyEdit<code>verz lock status
+verz lock unlock --force
+</code></pre>
+
+
+
+<p>And yes, there’s a pre-commit hook to block commits in the browse workspace unless explicitly allowed. Because it’s <strong>meant for inspection</strong>, not long-term editing.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">🧪 Use Cases</h3>
+
+
+
+<ul class="wp-block-list">
+<li>🤖 Before AI-generated refactors</li>
+
+
+
+<li>🧑‍💻 Start of a new experiment</li>
+
+
+
+<li>📆 End-of-day safe state</li>
+
+
+
+<li>🛠️ Breaking changes that might not work out</li>
+
+
+
+<li>🧾 Generating patch diffs without polluting real branches</li>
+</ul>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">🚀 Roadmap</h3>
+
+
+
+<p>VerZanctuary is currently at <code>v0.1.0</code>. Upcoming plans include:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Modularizing services (Git, FileOps, Diffs, Logging)</li>
+
+
+
+<li>Exportable snapshot metadata</li>
+
+
+
+<li>Integration with code agents or Git hooks</li>
+
+
+
+<li>SvelteKit frontend for visual inspection</li>
+</ul>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">📦 Get It Now</h3>
+
+
+
+<p>The project is open source under Apache 2.0 and lives here:</p>
+
+
+
+<p>👉 <strong><a href="https://github.com/robdeas/verzanctuary">github.com/robdeas/verzanctuary</a></strong></p>
+
+
+
+<p>Install instructions, usage examples, and full source are available in the README.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">💬 Feedback Welcome</h3>
+
+
+
+<p>VerZanctuary was born from frustration with unsafe AI edits and messy Git experiments. If you have thoughts, ideas, or want to contribute—get in touch on GitHub.</p>
+
+
+
+<p>Let’s make coding (and experimenting) safer again. 🧪🛡️</p>

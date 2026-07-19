@@ -1,0 +1,337 @@
+<p>📌 Note: This article was published on <a href="https://medium.com/your-link">Medium</a> and is cross-posted here for completeness.</p>
+
+
+
+<p>From raw threads in 1996 to java.util.concurrent (2004), lambdas (2014), reactive streams, and virtual threads (2023), Java has shipped tool after tool. Yet writing correct concurrent code that has clear lifetimes, reliable cancellation, and predictable error handling; still resembles a minefield. Here’s why, and how we can do better with modern patterns.</p>
+
+
+
+<h1 class="wp-block-heading"><a href="https://dev.to/rob_d_2c0d55e14e7037f2/why-does-concurrency-have-to-be-so-hard-in-java-after-20-years-jmb#why-is-this-still-so-hard"></a>Why is this still so hard?</h1>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading"><a href="https://dev.to/rob_d_2c0d55e14e7037f2/why-does-concurrency-have-to-be-so-hard-in-java-after-20-years-jmb#the-problem-too-many-halfsolutions"></a>The Problem: Too Many Half-Solutions</h2>
+
+
+
+<p>Let’s take a simple case:<br><br>Fetch data from three APIs concurrently, process results, handle errors, and respect a timeout.</p>
+
+
+
+<h3 class="wp-block-heading"><a href="https://dev.to/rob_d_2c0d55e14e7037f2/why-does-concurrency-have-to-be-so-hard-in-java-after-20-years-jmb#1-threads-1995"></a>1. Threads (1995)</h3>
+
+
+
+<pre class="wp-block-code"><code>public List&lt;String> fetchData() {
+    List&lt;String> results = Collections.synchronizedList(new ArrayList&lt;>());
+    CountDownLatch latch = new CountDownLatch(3);
+
+    Thread t1 = new Thread(() -> {
+        try {
+            results.add(callApi("api1"));
+        } catch (Exception e) {
+            // What do we do here?
+        } finally {
+            latch.countDown();
+        }
+    });
+
+    // … repeat for t2, t3 …
+
+    t1.start(); t2.start(); t3.start();
+
+    try {
+        latch.await(10, TimeUnit.SECONDS); // What if it times out?
+    } catch (InterruptedException e) {
+        // Now what? Cancel the threads?
+    }
+
+    return results; // Hope for the best
+}
+</code></pre>
+
+
+
+<h4 class="wp-block-heading">Problems:</h4>
+
+
+
+<p>Manual lifecycle management</p>
+
+
+
+<p>No consistent error propagation</p>
+
+
+
+<p>Cancellation is basically impossible</p>
+
+
+
+<h3 class="wp-block-heading"><a href="https://dev.to/rob_d_2c0d55e14e7037f2/why-does-concurrency-have-to-be-so-hard-in-java-after-20-years-jmb#2-executorservice-2004"></a>2. ExecutorService (2004)</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">public List&lt;String> fetchData() throws Exception {
+    ExecutorService executor = Executors.newFixedThreadPool(3);
+    try {
+        List&lt;Future&lt;String>> futures = List.of(
+            executor.submit(() -> callApi("api1")),
+            executor.submit(() -> callApi("api2")),
+            executor.submit(() -> callApi("api3"))
+        );
+
+        List&lt;String> results = new ArrayList&lt;>();
+        for (Future&lt;String> f : futures) {
+            try {
+                results.add(f.get(10, TimeUnit.SECONDS));
+            } catch (TimeoutException e) {
+                f.cancel(true);
+            }
+        }
+        return results;
+    } finally {
+        executor.shutdown();
+        executor.awaitTermination(5, TimeUnit.SECONDS);
+        executor.shutdownNow(); // Fingers crossed
+    }
+}
+</pre>
+
+
+
+<p>Better, but still verbose and error-prone.</p>
+
+
+
+<h3 class="wp-block-heading"><a href="https://dev.to/rob_d_2c0d55e14e7037f2/why-does-concurrency-have-to-be-so-hard-in-java-after-20-years-jmb#3-completablefuture-2014"></a>3. CompletableFuture (2014)</h3>
+
+
+
+<pre class="wp-block-code"><code>public CompletableFuture&lt;List&lt;String>> fetchData() {
+    var f1 = CompletableFuture.supplyAsync(() -> callApi("api1"));
+    var f2 = CompletableFuture.supplyAsync(() -> callApi("api2"));
+    var f3 = CompletableFuture.supplyAsync(() -> callApi("api3"));
+
+    return CompletableFuture.allOf(f1, f2, f3)
+        .thenApply(v -> List.of(f1.join(), f2.join(), f3.join()))
+        .orTimeout(10, TimeUnit.SECONDS)
+        .exceptionally(ex -> List.of());
+}
+</code></pre>
+
+
+
+<h4 class="wp-block-heading">Cleaner, but:</h4>
+
+
+
+<p>No structured concurrency</p>
+
+
+
+<p>Cancellation is awkward</p>
+
+
+
+<p>Error handling is ad-hoc</p>
+
+
+
+<h3 class="wp-block-heading"><a href="https://dev.to/rob_d_2c0d55e14e7037f2/why-does-concurrency-have-to-be-so-hard-in-java-after-20-years-jmb#4-virtual-threads-2023"></a>4. Virtual Threads (2023)</h3>
+
+
+
+<pre class="wp-block-code"><code>public List&lt;String> fetchData() throws Exception {
+    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+        var futures = List.of(
+            executor.submit(() -> callApi("api1")),
+            executor.submit(() -> callApi("api2")),
+            executor.submit(() -> callApi("api3"))
+        );
+
+        return futures.stream()
+            .map(f -> {
+                try {
+                    return f.get(10, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            })
+            .toList();
+    }
+}
+</code></pre>
+
+
+
+<h4 class="wp-block-heading">Virtual threads help performance, but the core problems remain:</h4>
+
+
+
+<p>No automatic cancellation</p>
+
+
+
+<p>No clear error boundaries</p>
+
+
+
+<p>Timeouts are still manual</p>
+
+
+
+<h1 class="wp-block-heading"><a href="https://dev.to/rob_d_2c0d55e14e7037f2/why-does-concurrency-have-to-be-so-hard-in-java-after-20-years-jmb#whats-wrong-here"></a>What’s Wrong Here?</h1>
+
+
+
+<p>After 20+ years, Java’s concurrency is still missing:</p>
+
+
+
+<p>Structured Concurrency — no parent/child lifetimes, leading to leaks.</p>
+
+
+
+<p>Reliable Cancellation — interruption is unreliable and inconsistent.</p>
+
+
+
+<p>Consistent Error Handling — failures don’t cleanly propagate.</p>
+
+
+
+<p>Resource Safety — Executors and threads must be closed manually.</p>
+
+
+
+<p>Context — no standard way to pass cancellation tokens, timeouts, or tracing.</p>
+
+
+
+<p><strong>Other languages got this right:</strong></p>
+
+
+
+<p>Go has context.WithTimeout for group cancellation.</p>
+
+
+
+<p>Kotlin has coroutines with structured scopes.</p>
+
+
+
+<p>C# has Tasks with CancellationToken.</p>
+
+
+
+<h1 class="wp-block-heading"><a href="https://dev.to/rob_d_2c0d55e14e7037f2/why-does-concurrency-have-to-be-so-hard-in-java-after-20-years-jmb#what-we-actually-want"></a>What We Actually Want</h1>
+
+
+
+<pre class="wp-block-code"><code>try (var scope = new CoroutineScope()) {
+    var results = List.of("api1", "api2", "api3").stream()
+        .map(api -> scope.async(suspend -> callApi(suspend, api)))
+        .map(handle -> handle.join())
+        .toList();
+    return results;
+} // Automatic cleanup, cancellation, and error propagation
+</code></pre>
+
+
+
+<p><strong>This is:</strong></p>
+
+
+
+<p>Structured — parent/child relationships are explicit</p>
+
+
+
+<p>Cancellable — cooperative and consistent</p>
+
+
+
+<p>Safe — resources cleaned up automatically</p>
+
+
+
+<p>Transparent — errors bubble naturally</p>
+
+
+
+<h1 class="wp-block-heading"><a href="https://dev.to/rob_d_2c0d55e14e7037f2/why-does-concurrency-have-to-be-so-hard-in-java-after-20-years-jmb#enter-jcoroutines"></a>Enter JCoroutines 🚀</h1>
+
+
+
+<p>Concurrency should feel like an elevator: press a few clear buttons and trust the machinery.</p>
+
+
+
+<p>That’s what I set out to build with JCoroutines:</p>
+
+
+
+<p>Structured concurrency by default</p>
+
+
+
+<p>Explicit context passing (cancellation, timeouts, schedulers)</p>
+
+
+
+<p>No compiler magic — just clean Java APIs on top of virtual threads</p>
+
+
+
+<p>It’s small, explicit, and available today.</p>
+
+
+
+<p>Try It Out<br>On Maven Central:</p>
+
+
+
+<p>maven xml</p>
+
+
+
+<pre class="wp-block-code"><code>&lt;dependency>
+  &lt;groupId>tech.robd&lt;/groupId>
+  &lt;artifactId>jcoroutines&lt;/artifactId>
+  &lt;version>0.1.0&lt;/version>
+&lt;/dependency>
+</code></pre>
+
+
+
+<p>Or Gradle:</p>
+
+
+
+<p>kotlin gradle.build.kts</p>
+
+
+
+<pre class="wp-block-code"><code>implementation("tech.robd:jcoroutines:0.1.0")
+</code></pre>
+
+
+
+<p>The Path Forward<br>Java itself is heading this way (see JEP 428 on structured concurrency), but it will take years before that’s fully stable.</p>
+
+
+
+<p>Meanwhile, JCoroutines gives you these patterns now — using just Java 21+ and virtual threads.</p>
+
+
+
+<p><a href="https://central.sonatype.com/artifact/tech.robd/jcoroutines" target="_blank" rel="noreferrer noopener">📦 Maven Central</a></p>
+
+
+
+<p><a href="https://github.com/robdeas/jcoroutines" target="_blank" rel="noreferrer noopener">💻 GitHub repo</a></p>

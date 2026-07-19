@@ -1,0 +1,369 @@
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p></p>
+
+
+
+<h3 class="wp-block-heading">Introduction</h3>
+
+
+
+<p>SvelteKit offers a fantastic framework for building web applications, and Bun brings incredible speed to the JavaScript ecosystem. Pairing these with the utility-first power of Tailwind CSS seems like a perfect match. However the latest Tailwind CSS v4, currently faces compatibility hurdles when used with Bun in SvelteKit projects.</p>
+
+
+
+<p>But don't let that stop you! Tailwind CSS v3 remains a powerful tool that integrates smoothly with SvelteKit and Bun. This post will guide you through setting up a reliable development environment using Tailwind CSS v3, SvelteKit, and Bun, complete with PostCSS, Autoprefixer, and plugin support.</p>
+
+
+
+<p><strong>What You'll Achieve:</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li>A minimal SvelteKit project running on Bun.</li>
+
+
+
+<li>Tailwind CSS v3 successfully integrated using PostCSS and Autoprefixer.</li>
+
+
+
+<li>The ability to add popular Tailwind CSS plugins (like Typography, Forms, etc.).</li>
+
+
+
+<li>A clear, step-by-step process to get you coding quickly.</li>
+</ul>
+
+
+
+<p>🧰 <a href="#want-to-skip-the-manual-steps" title="Automate It">Automate It</a> – Use the shell script if you want to skip ahead and get Tailwind v3 + SvelteKit + Bun set up in seconds. Its what I currently use to setup projects.</p>
+
+
+
+<p>Otherwise let's dive in to the detail.</p>
+
+
+
+<h3 class="wp-block-heading">Prerequisites</h3>
+
+
+
+<p>Before starting, ensure you have <strong>Bun</strong> installed on your system. You can find installation instructions on the <a target="_blank" rel="noreferrer noopener" href="https://bun.sh/">official Bun website</a>.</p>
+
+
+
+<h3 class="wp-block-heading">Step 1: Create Your SvelteKit Project</h3>
+
+
+
+<p>First, let's create a new SvelteKit project using Bun's package runner (<code>bunx</code>). Choose your preferred options when prompted by the SvelteKit initializer (It needs to be a demo project and have TypeScript support though). DO NOT select the option to add Tailwind CSS during the <code>sv create</code> process. It will be added later.</p>
+
+
+
+<p>Using Bash type:</p>
+
+
+
+<pre class="wp-block-code"><code>bunx sv create my-app
+cd my-app
+bun install
+</code></pre>
+
+
+
+<p>This creates a new directory <code>my-app</code>, navigates into it, and installs the necessary dependencies using Bun's fast installer.</p>
+
+
+
+<h3 class="wp-block-heading">Step 2: Install Tailwind CSS v3 and Dependencies</h3>
+
+
+
+<p>Next, we need to install Tailwind CSS itself, along with PostCSS (a tool for transforming CSS with JavaScript plugins) and Autoprefixer (a PostCSS plugin to parse CSS and add vendor prefixes). We specifically install version 3 of Tailwind (<code>tailwindcss@3</code>).</p>
+
+
+
+<p></p>
+
+
+
+<pre class="wp-block-code"><code>bun add -D tailwindcss@3 postcss autoprefixer
+</code></pre>
+
+
+
+<p><em>Note: The <code>-D</code> flag installs these as development dependencies.</em></p>
+
+
+
+<h3 class="wp-block-heading">Step 3: Initialize Tailwind CSS Configuration</h3>
+
+
+
+<p>Generate the Tailwind configuration file (<code>tailwind.config.js</code>). Again, we explicitly use <code>tailwindcss@3</code> here to ensure we get the v3 configuration structure.</p>
+
+
+
+<p></p>
+
+
+
+<pre class="wp-block-code"><code>bunx tailwindcss@3 init
+</code></pre>
+
+
+
+<p>This command creates a basic <code>tailwind.config.js</code> file in your project root.</p>
+
+
+
+<h3 class="wp-block-heading">Step 4: Create PostCSS Configuration</h3>
+
+
+
+<p>Tailwind CSS requires PostCSS to work its magic. Create a <code>postcss.config.js</code> file in the root of your project and add the following configuration:</p>
+
+
+
+<p>The JavaScript postcss.config.js file needs to be created or updated as below:</p>
+
+
+
+<pre class="wp-block-code"><code>// postcss.config.js
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+</code></pre>
+
+
+
+<p>This tells PostCSS to process your CSS using the Tailwind CSS and Autoprefixer plugins.</p>
+
+
+
+<h3 class="wp-block-heading">Step 5: Configure Tailwind Content Sources</h3>
+
+
+
+<p>Now, edit the generated <code>tailwind.config.js</code> file to tell Tailwind where to look for class names. Update the <code>content</code> array to include your Svelte components and any other template files.</p>
+
+
+
+<p>JavaScript</p>
+
+
+
+<pre class="wp-block-code"><code>// tailwind.config.js
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: &#91;'./src/**/*.{html,js,svelte,ts}'], // Scan these files for Tailwind classes
+  theme: {
+    extend: {},
+  },
+  plugins: &#91;], // We'll add plugins here later if needed
+}
+</code></pre>
+
+
+
+<h3 class="wp-block-heading">Step 6: Add Tailwind Directives to Your CSS</h3>
+
+
+
+<p>You need a global CSS file where Tailwind's base styles, component classes, and utility classes can be injected. Create a file named <code>src/app.css</code> (or update it if it already exists) and add the following Tailwind directives:</p>
+
+
+
+<p>CSS</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">/* src/app.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* You can add your own custom base styles below this line */
+</pre>
+
+
+
+<h3 class="wp-block-heading">Step 7: Import the CSS into Your Application</h3>
+
+
+
+<p>Ensure your global CSS file is imported into your SvelteKit application. The most common place to do this is in your root layout file, <code>src/routes/+layout.svelte</code>.</p>
+
+
+
+<p>TypeScript</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">// src/routes/+layout.svelte
+&lt;script lang="ts">
+  import '../app.css'; // Import the global CSS file
+&lt;/script>
+
+&lt;slot />
+</pre>
+
+
+
+<h3 class="wp-block-heading">Step 8: Run the Development Server</h3>
+
+
+
+<p>You're all set up! Start your SvelteKit development server using Bun:</p>
+
+
+
+<p></p>
+
+
+
+<pre class="wp-block-code"><code>bun run dev
+</code></pre>
+
+
+
+<h3 class="wp-block-heading">Step 9: Test Your Tailwind Installation</h3>
+
+
+
+<p>To verify that Tailwind CSS is working correctly, open any Svelte component (e.g., <code>src/routes/+page.svelte</code>) and add an element with some Tailwind utility classes:</p>
+
+
+
+<p></p>
+
+
+
+<p></p>
+
+
+
+<pre class="wp-block-code"><code>&lt;h1 class="text-3xl font-bold underline mb-4"&gt;Welcome to SvelteKit&lt;/h1&gt;
+
+&lt;div class="p-6 m-4 max-w-sm rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-white shadow-lg"&gt;
+  &lt;h2 class="text-xl font-semibold"&gt;Hello Tailwind!&lt;/h2&gt;
+  &lt;p class="mt-2"&gt;If this card is styled, Tailwind CSS v3 is working with SvelteKit and Bun!&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Visit &lt;a href="https://kit.svelte.dev" class="text-blue-600 hover:underline"&gt;kit.svelte.dev&lt;/a&gt; to read the documentation&lt;/p&gt;
+</code></pre>
+
+
+
+<p>Navigate to your application in the browser (usually <code>http://localhost:5173</code>). If you see a styled <code>div</code> element matching the classes you applied, congratulations – Tailwind CSS v3 is successfully integrated!</p>
+
+
+
+<h3 class="wp-block-heading">Extending with Tailwind Plugins</h3>
+
+
+
+<p>One of the great things about Tailwind is its ecosystem of plugins. For example, to add the official Typography plugin:</p>
+
+
+
+<p><strong>Install the plugin:</strong></p>
+
+
+
+<pre class="wp-block-code"><code><code>bun add -D @tailwindcss/typography</code></code></pre>
+
+
+
+<p><strong>Add it to your Tailwind configuration:</strong> JavaScript</p>
+
+
+
+<pre class="wp-block-code"><code><code>// tailwind.config.js /** @type {import('tailwindcss').Config} */ module.exports = { content: &#91;'./src/**/*.{html,js,svelte,ts}'], theme: { extend: {}, }, plugins: &#91; require('@tailwindcss/typography'), // Add the plugin here // require('@tailwindcss/forms'), // Example: Add other plugins // require('@tailwindcss/aspect-ratio'), // Example: Add other plugins ], }</code></code></pre>
+
+
+
+<h3 class="wp-block-heading">Important Considerations</h3>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Avoid Tailwind CSS v4 (for now):</strong> As mentioned, stick with <code>tailwindcss@3</code> when using Bun with SvelteKit due to current compatibility issues. Keep an eye on updates from the Bun, SvelteKit, and Tailwind teams for future compatibility.</li>
+
+
+
+<li><strong>Plugin Installation:</strong> Remember to install plugins as dev dependencies (<code>bun add -D @tailwindcss/plugin-name</code>) and require them in your <code>tailwind.config.js</code>.</li>
+</ul>
+
+
+
+<h2 class=" wp-block-heading">⚡️ Want to skip the manual steps?</h2>
+
+
+
+<p>If you’d rather get straight to coding, I’ve written a shell script that automates this entire setup — including Tailwind v3, PostCSS, Autoprefixer, and optional plugin support.</p>
+
+
+
+<p>Just run this from your terminal:</p>
+
+
+
+<pre class="wp-block-preformatted"><code>curl -sSL https://raw.githubusercontent.com/robdeas/bun-tools/main/bin/init-sveltekit-tailwind.sh | bash -s my-app --plugins forms typography<br></code></pre>
+
+
+
+<p>Or clone it locally from <a href="https://github.com/robdeas/bun-tools">bun-tools on GitHub</a> and run:</p>
+
+
+
+<pre class="wp-block-preformatted"><code>./init-sveltekit-tailwind.sh my-app --plugins forms typography<br></code></pre>
+
+
+
+<p>✅ Supports:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Plugin flags (<code>--plugins forms typography</code>)</li>
+
+
+
+<li>Tailwind CSS v3 only</li>
+
+
+
+<li>Bun-native project setup with <code>bunx sv create</code></li>
+</ul>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h4 class=" wp-block-heading"></h4>
+
+
+
+<h3 class="wp-block-heading">Conclusion</h3>
+
+
+
+<p>You now have a robust setup combining the speed of Bun, the elegance of SvelteKit, and the utility-first styling power of Tailwind CSS v3. While we eagerly await seamless Tailwind v4 integration in this stack, this v3 setup provides a stable and highly productive environment for building modern web applications today. You can either follow the manual steps above, or automate the entire process using the setup script from my <a href="https://github.com/robdeas/bun-tools"><code>bun-tools</code></a> repo. It’s MIT licensed and ready for reuse.</p>
+
+
+
+<p>Happy coding!</p>
+
+
+
+<p></p>

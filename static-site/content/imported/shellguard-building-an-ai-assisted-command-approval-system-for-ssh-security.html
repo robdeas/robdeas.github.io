@@ -1,0 +1,538 @@
+<h1 class="wp-block-heading"></h1>
+
+
+
+<p><em>How we built a real-time command approval system to make AI automation safer</em>. Please note: This is a preview system and more features will be needed before deploying it to production, but its real and it works! </p>
+
+
+
+<p><strong>RoboShellGuard</strong> (formerly just Shellguard) is open source and licensed under the GNU General Public License v3.0. You can find the full license text in the project's repository.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">The Problem: AI Agents Gone Wild</h2>
+
+
+
+<p>Picture this: You're deploying an AI agent to help manage your infrastructure. It's 3 AM, the agent decides to "clean up" your production database, and suddenly you're having the worst morning of your career.</p>
+
+
+
+<p>Sound familiar? Not yet? Come back in a year or two if you're not already having nightmares about it. As AI agents become more common in DevOps workflows, we're facing a critical challenge: <strong>How do we harness the power of AI automation while maintaining control and safety?</strong></p>
+
+
+
+<p>Traditional solutions like restricted shells help, but they don't provide real-time insight, decision-making, or audit trails. That's why we built <strong>RoboShellGuard</strong> - an AI-assisted command approval and risk assessment system.</p>
+
+
+
+<p>Maybe AI will never be let loose near live, or even test environments, maybe you can just use it on development environments, but if your competitors do you may get little choice, but you don’t have to cut so many corners that disaster is just round one!</p>
+
+
+
+<h2 class="wp-block-heading">What is RoboShellGuard?</h2>
+
+
+
+<p>RoboShellGuard acts as an intelligent proxy between AI agents and your SSH environments. Think of it as a "human-in-the-loop" system that analyzes commands in real-time using AI for risk assessment. It routes high-risk commands to human operators for approval and provides audit trails for every command and decision. ShellGuard integrates seamlessly with existing AI systems via its simple WebSocket API.</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Analyzes commands in real-time</strong> using AI risk assessment</li>
+
+
+
+<li><strong>Routes high-risk commands</strong> to human operators for approval</li>
+
+
+
+<li><strong>Provides full audit trails</strong> of every command and decision</li>
+
+
+
+<li><strong>Integrates seamlessly</strong> with existing AI systems via WebSocket API</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Architecture Overview</h2>
+
+
+
+<p>ShellGuard is built with <strong>Kotlin</strong> and <strong>Spring Boot</strong>, designed for reliability and enterprise deployment. Here's how it works:</p>
+
+
+
+<pre class="wp-block-preformatted"><code>AI Agent → WebSocket API → Risk Assessor → Approval Engine → SSH Execution</code>
+<code>     ↓                           ↓              ↓              ↓</code>
+<code>   </code><code>Command              Risk Score      Human Review     Audit Log</code></pre>
+
+
+
+<h3 class="wp-block-heading">Core Components</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>WebSocket JSON API</strong> - Real-time communication with AI agents</li>
+
+
+
+<li><strong>Risk Assessment Engine</strong> - AI-powered command analysis</li>
+
+
+
+<li><strong>Approval Center</strong> - Web dashboard for human oversight</li>
+
+
+
+<li><strong>Terminal Test Client</strong> - Development and testing interface</li>
+
+
+
+<li><strong>Audit System</strong> - Complete command history and compliance</li>
+</ol>
+
+
+
+<h2 class="wp-block-heading">Getting Started: The Developer Experience</h2>
+
+
+
+<h3 class="wp-block-heading">1. Setting Up RoboShellGuard</h3>
+
+
+
+<pre class="wp-block-preformatted"><code># Clone the repository</code>
+<code>git clone https://github.com/robokeys/shellguard.git</code>
+<code>cd shellguard</code>
+
+<code># Build with Gradle</code>
+<code>./gradlew build</code>
+
+<code># Start the server</code>
+<code>./gradlew bootRun</code></pre>
+
+
+
+<h3 class="wp-block-heading">2. Connecting Your AI Agent</h3>
+
+
+
+<p>The WebSocket API makes integration straightforward:</p>
+
+
+
+<pre class="wp-block-preformatted"><code>// Connect to ShellGuard</code><br><code>const ws = new WebSocket('ws://localhost:8080/rkcl/ws');</code><br><br><code>// Send a command for approval</code><br><code>const command = {</code><br><code>    "command":</code> "LINE"<br><code>    "parameter": "systemctl restart nginx",</code><br><code>    "session": "production"</code><br><code>};</code><br><br><code>ws.send(JSON.stringify(command));</code><br><br><code>// Handle the response</code><br><code>ws.onmessage = (event) =&gt; {</code><br><code>    const response = JSON.parse(event.data);</code><br><code>    </code><br><code>    switch(response.status) {</code><br><code>        case 'PENDING':</code><br><code>            console.log('Command submitted for approval');</code><br><code>            break;</code><br><code>        case 'APPROVED':</code><br><code>            console.log('Command approved:', response.result);</code><br><code>            break;</code><br><code>        case 'REJECTED':</code><br><code>            console.log('Command rejected:', response.reason);</code><br><code>            break;</code><br><code>    }</code><br><code>};</code></pre>
+
+
+
+<h3 class="wp-block-heading">3. Testing with the Terminal Client</h3>
+
+
+
+<p>ShellGuard includes a built-in test client that uses the same WebSocket interface as production AI agents:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Real-time command testing</strong></li>
+
+
+
+<li><strong>WebSocket connection management</strong></li>
+
+
+
+<li><strong>Response monitoring</strong></li>
+
+
+
+<li><strong>Session handling</strong></li>
+</ul>
+
+
+
+<p>This ensures your integration testing is as close to production as possible.</p>
+
+
+
+<h2 class="wp-block-heading">Real-World Use Cases</h2>
+
+
+
+<p>The power of RoboShellGuard lies in its simple, yet robust, protocol-based interface. While we'll be releasing dedicated clients for specific AI systems in the future, the core of ShellGuard is a simple WebSocket API. This approach provides maximum flexibility, allowing you to integrate with any agent or language you choose.</p>
+
+
+
+<p>The RoboShellGuard protocol supports various prefixes to handle different types of input. For example, command strings are sent with a <code>LINE:</code> prefix, while interactive keystrokes, such as an up arrow, use a <code>KEY:</code> prefix. This design gives you a clear and consistent way to send different types of shell input, receive real-time risk assessments, and manage the approval workflow. Commands may also be sent in JSON format.</p>
+
+
+
+<p>Below are a few examples demonstrating how an AI agent could use ShellGuard in different scenarios.</p>
+
+
+
+<h3 class="wp-block-heading">1. Infrastructure Management AI</h3>
+
+
+
+<pre class="wp-block-preformatted"><code># Example: AI agent managing server deployments</code>
+<code>class InfrastructureAgent:</code>
+<code>    </code><code>def __init__(self):</code>
+<code>        </code><code>self.shellguard = ShellGuardClient()</code>
+
+<code>    </code><code>def deploy_service(self, service_name):</code>
+<code>        </code><code># High-risk command - will require approval</code>
+<code>        </code><code>result = self.shellguard.execute(</code>
+<code>            </code><code>f"LINE:sudo systemctl stop {service_name}"</code>
+<code>        </code><code>)</code>
+
+<code>        </code><code>if result.approved:</code>
+<code>            </code><code># Continue with deployment</code>
+<code>            </code><code>self.shellguard.execute(</code>
+<code>                </code><code>f"LINE:docker pull {service_name}:latest"</code>
+<code>            </code><code>)</code>
+</pre>
+
+
+
+<h3 class="wp-block-heading">2. Database Maintenance Automation</h3>
+
+
+
+<pre class="wp-block-preformatted"><code>// Example: Automated database cleanup</code>
+<code>const maintenanceCommands = [</code>
+<code>    </code><code>"</code><code>LINE:</code><code>pg_dump production_db &gt; backup.sql",  // Low risk - auto-approved</code>
+<code>    </code><code>"</code><code>LINE:</code><code>DROP TABLE temp_analytics;",          // High risk - needs approval</code>
+<code>    </code><code>"</code><code>LINE:</code><code>VACUUM ANALYZE;"                      // Medium risk - configurable</code>
+<code>];</code>
+
+<code>for (const cmd of maintenanceCommands) {</code>
+<code>    </code><code>await shellguard.executeWithApproval(cmd);</code>
+<code>}</code></pre>
+
+
+
+<h3 class="wp-block-heading">3. Security Response Automation</h3>
+
+
+
+<p>For commands that require more context, such as a security response, the API can accept a detailed JSON object.</p>
+
+
+
+<pre class="wp-block-preformatted"><code>// Example: Automated incident response</code>
+<code>class SecurityResponseAgent {</code>
+<code>    </code><code>fun handleSuspiciousActivity(ipAddress: String) {</code>
+<code>        </code><code>// Block suspicious IP - high risk command</code>
+<code>        </code><code>shellGuard.submitCommand(</code>
+<code>            </code><code>command = "</code><code>LINE”</code>
+<code>            </code><code>parameter = ”</code><code>iptables -A INPUT -s $ipAddress -j DROP",</code>
+<code>            </code><code>priority = CommandPriority.HIGH,</code>
+<code>            </code><code>reason = "Blocking suspicious IP: $ipAddress"</code>
+<code>        </code><code>)</code>
+<code>    </code><code>}</code>
+<code>}</code></pre>
+
+
+
+<h2 class="wp-block-heading">The Risk Assessment Engine</h2>
+
+
+
+<p>One of RoboShellGuard's key features is intelligent risk scoring. Commands are analyzed based on:</p>
+
+
+
+<h3 class="wp-block-heading">Risk Factors</h3>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Privilege level</strong> (sudo, root access)</li>
+
+
+
+<li><strong>Destructive potential</strong> (rm, drop, delete operations)</li>
+
+
+
+<li><strong>System impact</strong> (service restarts, network changes)</li>
+
+
+
+<li><strong>Data sensitivity</strong> (database operations, file modifications)</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Configurable Rules</h3>
+
+
+
+<p>Coming soon !</p>
+
+
+
+<pre class="wp-block-preformatted"><code># Example risk assessment configuration</code>
+<code>risk_assessment:</code>
+<code>  </code><code>rules:</code>
+<code>    </code><code>- pattern: "sudo rm -rf .*"</code>
+<code>      </code><code>risk_level: CRITICAL</code>
+<code>      </code><code>require_approval: true</code>
+<code>    </code>
+<code>    </code><code>- pattern: "systemctl restart .*"</code>
+<code>      </code><code>risk_level: MEDIUM</code>
+<code>      </code><code>require_approval: false</code>
+<code>      </code><code>notify_operators: true</code>
+<code>    </code>
+<code>    </code><code>- pattern: "ls .*|ps .*|cat .*"</code>
+<code>      </code><code>risk_level: LOW</code>
+<code>      </code><code>auto_approve: true</code></pre>
+
+
+
+<h2 class="wp-block-heading">Building for Production</h2>
+
+
+
+<h3 class="wp-block-heading">Security Considerations</h3>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Authentication</strong>: Integrate with your existing auth systems (Coming soon)</li>
+
+
+
+<li><strong>Authorization</strong>: Role-based approval workflows  (Coming soon)</li>
+
+
+
+<li><strong>Encryption</strong>: TLS for all communications  (Coming soon)</li>
+
+
+
+<li><strong>Audit Logging</strong>: Immutable command history</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Scalability Features</h3>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Horizontal scaling</strong> with Spring Boot</li>
+
+
+
+<li><strong>Database persistence</strong> for audit trails (Coming soon)</li>
+
+
+
+<li><strong>Load balancing</strong> for high-availability</li>
+
+
+
+<li><strong>Monitoring</strong> with built-in metrics</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Integration Points</h3>
+
+
+
+<p>ShellGuard plays well with existing tools:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>CI/CD pipelines</strong> (Jenkins, GitLab CI, GitHub Actions)</li>
+
+
+
+<li><strong>Monitoring systems</strong> (Prometheus, Grafana)</li>
+
+
+
+<li><strong>Chat ops</strong> (Slack, Microsoft Teams)</li>
+
+
+
+<li><strong>SIEM platforms</strong> (Splunk, ELK Stack)</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">The HTMX-Powered Dashboard</h2>
+
+
+
+<p>The approval center uses <strong>HTMX</strong> for real-time updates without heavy JavaScript frameworks:</p>
+
+
+
+<pre class="wp-block-preformatted"><code>&lt;!-- Live updating approval queue --&gt;</code>
+<code>&lt;div hx-get="/api/pending-approvals" </code>
+<code>     </code><code>hx-trigger="every 2s"</code>
+<code>     </code><code>hx-target="#approval-queue"&gt;</code>
+<code>    </code><code>&lt;!-- Approval cards inserted here --&gt;</code>
+<code>&lt;/div&gt;</code></pre>
+
+
+
+<p>This approach gives us:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Instant updates</strong> as commands arrive</li>
+
+
+
+<li><strong>Minimal complexity</strong> compared to React/Vue</li>
+
+
+
+<li><strong>Better performance</strong> for real-time dashboards</li>
+
+
+
+<li><strong>Progressive enhancement</strong> that works without JavaScript</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">What's Next?</h2>
+
+
+
+<p>We're actively developing ShellGuard with planned features including:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Machine learning</strong> risk models</li>
+
+
+
+<li><strong>Integration plugins</strong> for major platforms</li>
+
+
+
+<li><strong>Advanced reporting</strong> and analytics</li>
+
+
+
+<li><strong>Multi-tenant</strong> support for managed services</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Try It Yourself</h2>
+
+
+
+<p>ShellGuard is open source and ready for production use:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>GitHub</strong>: <a href="https://github.com/robokeys/roboshellguard" title="">github.com/robokeys/roboshellguard</a></li>
+
+
+
+<li><strong>Documentation</strong>: <a href="https://robokeys.tech/assets/About%20Robokeys%20ShellGuard.pdf">Full user guide PDF</a></li>
+
+
+
+<li><strong>RoboShellGuard Product Page:</strong> <a href="https://robokeys.tech/shellguard.html" title="">Robokeys ShellGuard</a></li>
+
+
+
+<li><strong>Live Demo</strong>: Coming soon!</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Contributing</h3>
+
+
+
+<p><strong>RoboShellGuard</strong> is open source and licensed under the GNU General Public License v3.0. You can find the full license text in the project's repository.</p>
+
+
+
+<p>We welcome contributions! Areas where we'd love help:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Risk assessment algorithms</strong></li>
+
+
+
+<li><strong>Integration plugins</strong> (Terraform, Ansible, etc.)</li>
+
+
+
+<li><strong>UI/UX improvements</strong></li>
+
+
+
+<li><strong>Documentation and examples</strong></li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Final Thoughts</h2>
+
+
+
+<p>AI automation is inevitable, but it doesn't have to be uncontrolled. ShellGuard provides the safety net that lets you move fast without breaking things.</p>
+
+
+
+<p>The future of DevOps isn't choosing between human oversight and AI efficiency - it's combining both intelligently. RoboShellGuard makes that possible today.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>Want to learn more?</strong> Check out our other tools in the Robokeys ecosystem:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>RoboKeyTags</strong>: Semantic metadata for AI-assisted development</li>
+
+
+
+<li><strong>Verzanctuary</strong>: Safe experimentation without polluting Git history</li>
+
+
+
+<li><strong>More projects</strong>: <a href="https://robokeys.tech/">robokeys.tech</a></li>
+</ul>
+
+
+
+<p><em>What are your thoughts on AI automation safety? Have you faced similar challenges? Let's discuss in the comments!</em></p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><em>Tags: #ai #automation #devops #security #ssh #kotlin #springboot #opensource</em></p>

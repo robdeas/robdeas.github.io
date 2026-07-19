@@ -1,0 +1,203 @@
+<h1 class="wp-block-heading">Say Hello to emoji-logger: Expressive Logging for Kotlin and Spring</h1>
+
+
+
+<p>If you've ever stared at a wall of identical log lines during debugging and wished your logs could speak more clearly — or even be a little less dull — you’re going to like this.</p>
+
+
+
+<p>Today, I’m excited to announce <a href="https://github.com/robdeas/emoji-logger">emoji-logger</a>, a Kotlin, SLF4J-compatible logging library designed to bring clarity, structure, and a little joy to your logs.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">Why Another Logging Library?</h2>
+
+
+
+<p>Most apps use SLF4J or Logback under the hood — and for good reason. But raw logging has some rough edges:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Important events blend into the noise</li>
+
+
+
+<li>You lose track of <em>which</em> context (user, request, job) logged <em>what</em></li>
+
+
+
+<li>Your log format might be consistent... but not expressive</li>
+</ul>
+
+
+
+<p><strong>emoji-logger</strong> was built to help with all that — without replacing your existing logging infrastructure.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">✨ What Does emoji-logger Add?</h2>
+
+
+
+<ul class="wp-block-list">
+<li>✅ <strong>Emoji log symbols</strong> for quick scanning and visual separation</li>
+
+
+
+<li>? <strong>MDC helpers</strong> to add structured context (like <code>userId</code> or <code>requestId</code>) without boilerplate</li>
+
+
+
+<li>?️ <strong>DSL-style syntax</strong> so logs read like expressive statements, not Java plumbing</li>
+
+
+
+<li>? <strong>Spring Boot auto-integration</strong> (if you want it)</li>
+</ul>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">A Few Examples</h2>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">logger.info(LogSymbol.GREEN_TICK, "Everything worked!")
+
+logger.withMdc("userId" to "abc123") {
+    logger.debug(LogSymbol.USER, "Fetched profile")
+}
+
+emojiLog(LogSymbol.BUG) { "Unexpected null response" }</pre>
+
+
+
+<p>Or DSL-style:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">LOG_DB log "Query executed"
+LOG_HANDLER logFormat ("Saved {}" to arrayOf("user"))</pre>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">⚙️ Works With What You Already Use</h2>
+
+
+
+<p>emoji-logger is designed to layer cleanly on top of SLF4J. You don’t need to change your logback setup, log format, or core dependencies.</p>
+
+
+
+<p>It also plays nicely with:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Spring Boot (auto-config optional)</li>
+
+
+
+<li>Kotlin coroutines (with coroutine-aware <code>withMdcSuspend</code>)</li>
+
+
+
+<li>Java (fully interoperable with <code>Logger</code> and <code>MDC</code>)</li>
+</ul>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">When Should You Use It?</h2>
+
+
+
+<p>If you're building:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Kotlin microservices</li>
+
+
+
+<li>Spring Boot backends</li>
+
+
+
+<li>CLI tools or schedulers</li>
+
+
+
+<li>Apps where log clarity matters</li>
+</ul>
+
+
+
+<p>...emoji-logger can help you surface the signal, tag the noise, and make your logs <em>actually pleasant to read.</em></p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">Try It Out</h2>
+
+
+
+<p>Soon yow will just Add the library:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">implementation("tech.robd:emoji-logger:x.y.z")</pre>
+
+
+
+<p>Then get logging:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">val logger = EmojiLogger.get&lt;MyService>()
+logger.info(LogSymbol.STARTUP, "App starting")</pre>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">Final Thoughts</h2>
+
+
+
+<p>Logging doesn’t have to be boring. With emoji-logger, your logs can be structured, expressive, and — dare I say — joyful.</p>
+
+
+
+<p>Give it a ⭐️ on <a href="https://github.com/robdeas/emoji-logger">GitHub</a>, try it out in your next Kotlin project, and let me know what you think.</p>
+
+
+
+<blockquote class="wp-block-quote">
+<p>Happy logging! — Rob</p>
+</blockquote>

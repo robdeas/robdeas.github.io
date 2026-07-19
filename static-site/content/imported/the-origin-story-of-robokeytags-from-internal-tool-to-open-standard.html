@@ -1,0 +1,305 @@
+<h1 class="wp-block-heading"></h1>
+
+
+
+<p>Sometimes the best solutions come from scratching your own itch. Robokeytags started as a simple internal utility at Robokeys, but evolved into something I believe could transform how we all work with code generation and AI.</p>
+
+
+
+<h2 class="wp-block-heading">The Beginning: A Codegen Problem</h2>
+
+
+
+<p>Like many developers, I was tired of writing boilerplate. So I built internal code generators using tools like Plop and custom scripts. But I kept hitting the same wall:</p>
+
+
+
+<p><strong>How do you tell a generator where it's safe to insert code?</strong></p>
+
+
+
+<p>You could use markers like <code>&lt;!-- INSERT HERE --&gt;</code>, but every tool had its own syntax. Spring Boot generators used one pattern, our custom tools used another, and frontend scaffolding used something else entirely. It was chaos.</p>
+
+
+
+<h2 class="wp-block-heading">The First Insight: Universal Structure Markers</h2>
+
+
+
+<p>That's when I created the first version of what would become Robokeytags, to use at Robokeys. I used puzzle piece emoji (🧩) because:</p>
+
+
+
+<ul class="wp-block-list">
+<li>They're visual and hard to miss</li>
+
+
+
+<li>They represent how code pieces fit together</li>
+
+
+
+<li>They work in any language's comments</li>
+
+
+
+<li>They're just Unicode - no special tooling needed</li>
+</ul>
+
+
+
+<p>The 🧩 tags became our universal language for code structure:</p>
+
+
+
+<pre class="wp-block-preformatted"><code><em>// [🧩 Section: routes/primary]</em><br><em>// [🧩 Point: route-insertion]</em><br><em>// [🧩 Region: NonEditable: generated-imports]</em></code></pre>
+
+
+
+<p>Suddenly, ALL our tools could understand the same structure. Plop knew where to insert. Our custom generators knew what to preserve. It was like giving all our tools the same map.</p>
+
+
+
+<h2 class="wp-block-heading">The Second Insight: Human Context Matters</h2>
+
+
+
+<p>As the system grew, we realized we needed a way to add human context that tools would respect but not process. Enter the 📌 (pin) tags:</p>
+
+
+
+<pre class="wp-block-preformatted"><code><em>// [📌 Note: This uses the CEO's special report format - DO NOT CHANGE]</em><br><em>// [📌 TODO: Refactor after Q2 when we deprecate the legacy API]</em></code></pre>
+
+
+
+<p>These weren't instructions for tools - they were notes for humans. But crucially, tools knew to preserve them.</p>
+
+
+
+<h2 class="wp-block-heading">The Game Changer: AI Enters the Picture</h2>
+
+
+
+<p>Then came the AI coding boom. Suddenly, I'm working with Claude, GPT-4, and other assistants. And I realized: <strong>they had the same problem my code generators did, but worse.</strong></p>
+
+
+
+<p>AI assistants are incredibly powerful but have the memory of a goldfish. Every conversation starts fresh. They can't remember:</p>
+
+
+
+<ul class="wp-block-list">
+<li>What patterns they detected last time</li>
+
+
+
+<li>Which code sections they're uncertain about</li>
+
+
+
+<li>What they learned about your codebase</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">The Third Insight: AI Needs Persistent Memory</h2>
+
+
+
+<p>That's when I added the 🤖 (robot) tags - and everything clicked:</p>
+
+
+
+<pre class="wp-block-preformatted"><code><em>// [🤖 confidence-low: auth/logic] Complex business logic, needs more context</em><br><em>// [🤖 pattern-detected: Observer pattern with custom modifications]</em><br><em>// [🤖 refactor-suggestion: Consider extracting strategy pattern here]</em><br><em>// [🤖 agent:security-scanner: vulnerability-check-passed: 2025-05-22]</em><br><em>// [🤖 agent:performance-analyzer: possible-n+1-query: investigate UserRepository.findAll()]</em></code></pre>
+
+
+
+<p>These tags let AI build understanding across sessions. It's like giving AI a notebook that doesn't disappear when you close the chat.</p>
+
+
+
+<p>But then I realized something even bigger: <strong>multiple AI agents could collaborate through these tags.</strong></p>
+
+
+
+<p>Imagine:</p>
+
+
+
+<ul class="wp-block-list">
+<li>A security-focused AI leaves notes about potential vulnerabilities</li>
+
+
+
+<li>A performance AI marks possible bottlenecks</li>
+
+
+
+<li>A refactoring AI suggests patterns</li>
+
+
+
+<li>A documentation AI identifies missing explanations</li>
+
+
+
+<li>Each agent builds on the others' insights</li>
+</ul>
+
+
+
+<p>It's not just memory - it's <strong>asynchronous AI collaboration</strong>.</p>
+
+
+
+<h2 class="wp-block-heading">Why This Matters</h2>
+
+
+
+<p>What started as a simple codegen utility revealed a fundamental truth: <strong>all our tools need to speak the same language about code structure.</strong></p>
+
+
+
+<p>Whether it's:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Plop generating components</li>
+
+
+
+<li>Spring Boot CLI scaffolding controllers</li>
+
+
+
+<li>AI assistants refactoring code</li>
+
+
+
+<li>Linters checking standards</li>
+
+
+
+<li>Humans understanding intent</li>
+</ul>
+
+
+
+<p>They all need to understand what's structural (🧩), what's human context (📌), and what's machine memory (🤖).</p>
+
+
+
+<h2 class="wp-block-heading">The Decision to Open Source</h2>
+
+
+
+<p>I could have kept Robokeytags as an internal Robokeys tool. But the more I used it, the more I realized this problem is universal. Every developer using code generation or AI faces these same challenges.</p>
+
+
+
+<p>The 🤖 tags especially felt too important to keep private. They could fundamentally change how AI assistants work with code - from stateless helpers to tools with real memory and understanding.</p>
+
+
+
+<p>But more than that, they enable something we've never had before: <strong>AI agents that can work together on your codebase</strong>, leaving notes and building shared understanding over time.</p>
+
+
+
+<p>One agent's uncertainty becomes another agent's investigation. One agent's pattern detection becomes another's refactoring opportunity. It's like having a persistent AI team discussion embedded in your code.</p>
+
+
+
+<h2 class="wp-block-heading">What's Next</h2>
+
+
+
+<p>Robokeytags v1.0 is now open source. It's battle-tested from months of internal use at Robokeys. But I believe the community will take it places I never imagined.</p>
+
+
+
+<p>Some possibilities I'm excited about:</p>
+
+
+
+<ul class="wp-block-list">
+<li>IDE plugins that visualize the puzzle structure</li>
+
+
+
+<li>AI assistants that remember everything between sessions</li>
+
+
+
+<li>Linters that understand tool boundaries</li>
+
+
+
+<li>Code review tools that highlight structural changes</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Join the Journey</h2>
+
+
+
+<p>If you're frustrated by:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Code generators that don't know where to insert</li>
+
+
+
+<li>AI that forgets everything between chats</li>
+
+
+
+<li>The chaos of multiple tool conventions</li>
+
+
+
+<li>Lost context in your codebase</li>
+</ul>
+
+
+
+<p>Then Robokeytags might be your answer too.</p>
+
+
+
+<p>Check out the spec: github.com/robokeys/robokeytags</p>
+
+
+
+<p>Or read more about how it solves the AI memory problem: robokeys.tech/robokeytags</p>
+
+
+
+<p>This started as a simple internal tool. With your help, it could become the standard for how all our tools understand code.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><em>What code generation or AI collaboration problems are you facing? I'd love to hear if Automotan Tags might help solve them.</em></p>
+
+
+
+<p></p>
+
+
+
+<p></p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p></p>

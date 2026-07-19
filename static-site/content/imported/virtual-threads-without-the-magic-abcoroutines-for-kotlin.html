@@ -1,0 +1,428 @@
+<h2 class="wp-block-heading"> The <s>Problem</s> Opportunity</h2>
+
+
+
+<p>Virtual Threads arrived with JDK 21 — promising lightweight concurrency without frameworks. But while they simplify threading, they don't give you structure. You still have to manage scopes, cancellations, timeouts, and races yourself.</p>
+
+
+
+<p>That's why I built <strong>ABCoroutines</strong> — a <strong>small, explicit toolkit</strong> that turns JDK 21 Virtual Threads into a structured-concurrency experience for Kotlin developers.</p>
+
+
+
+<h2 class="wp-block-heading">💡 The Real Problem</h2>
+
+
+
+<ul class="wp-block-list">
+<li>Virtual Threads are <em>threads</em>, not coroutines — they don't compose naturally.</li>
+
+
+
+<li>Existing frameworks hide too much behind magic or global context.</li>
+
+
+
+<li>Most examples focus on "Hello Virtual Thread", not real coordination patterns. Memory leaks are common.</li>
+</ul>
+
+
+
+<p>Kotlin already has a great coroutine model, but it doesn't automatically map onto JDK Virtual Threads. ABCoroutines bridges that gap.</p>
+
+
+
+<h2 class="wp-block-heading">⚙️ Introducing ABCoroutines</h2>
+
+
+
+<p><strong>🧩 Structured concurrency built on JDK 21 Virtual Threads — without the magic.</strong></p>
+
+
+
+<p>It's a minimal, composable toolkit offering:</p>
+
+
+
+<ul class="wp-block-list">
+<li>A <strong>VirtualThreads</strong> <code>CoroutineDispatcher</code> (backed by <code>Executors.newVirtualThreadPerTaskExecutor()</code>)</li>
+
+
+
+<li>A long-lived <strong>applicationScope</strong></li>
+
+
+
+<li>Predictable <strong>lifecycle management</strong> (<code>ensureRunning</code>, <code>shutdown</code>, <code>reset</code>)</li>
+
+
+
+<li>High-level coordination patterns: <code>parallel</code>, <code>zip</code>, <code>raceForSuccess</code>, <code>retry</code></li>
+
+
+
+<li>Clean <strong>timeout</strong> and <strong>retry</strong> wrappers using Kotlin's <code>Duration</code></li>
+
+
+
+<li><strong>Java interop</strong> through standard <code>Executor</code> / <code>ExecutorService</code></li>
+
+
+
+<li><strong>74 tests</strong> verifying cancellation, resource safety, and concurrency</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">🧩 Relationship to JCoroutines</h2>
+
+
+
+<p>ABCoroutines builds on concepts proven in my earlier project, <strong><a href="https://github.com/robdeas/jcoroutines">JCoroutines</a></strong> — a pure Java 21 implementation of structured concurrency designed around Virtual Threads.<br>While JCoroutines brings coroutine-like structure to Java itself, ABCoroutines adapts those same principles to Kotlin — combining idiomatic suspend functions with the predictability and lifecycle control of Virtual Threads.</p>
+
+
+
+<p>To keep things focused, this release includes only <strong>minimal interop</strong>:<br>it exposes the underlying <strong>Virtual Thread Executor</strong> through a standard <code>Executor</code> and <code>ExecutorService</code>, so Java code can safely schedule work into the same structured environment.</p>
+
+
+
+<p>A more complete <strong>JCoroutines ↔ ABCoroutines interop layer</strong> is currently being prepared for release.<br>It’s a fascinating area — particularly for <strong>testing and mixed Java/Kotlin projects</strong>, where being able to share structured scopes and cancellation semantics across both languages opens up new possibilities for gradual migration and hybrid systems.</p>
+
+
+
+<h2 class="wp-block-heading">🧠 Thinking in Patterns, Not Primitives</h2>
+
+
+
+<p>Instead of juggling thread pools, you express intent:</p>
+
+
+
+<h3 class="wp-block-heading">Parallel Execution</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">val results = parallel(
+    { fetchUserProfile(userId) },
+    { fetchUserOrders(userId) },
+    { fetchUserPreferences(userId) }
+)
+</pre>
+
+
+
+<p>All three operations run concurrently on virtual threads. If any fails, the others are cancelled.</p>
+
+
+
+<h3 class="wp-block-heading">Racing for the Fastest Result</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">val quote = raceForSuccess(
+    { fetchQuoteFromProvider1() },
+    { fetchQuoteFromProvider2() },
+    { fetchQuoteFromProvider3() }
+)
+</pre>
+
+
+
+<p>Returns the first successful result, cancelling the slower operations.</p>
+
+
+
+<h3 class="wp-block-heading">Combining Results</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">val (profile, orders) = zip(
+    { fetchUserProfile(userId) },
+    { fetchUserOrders(userId) }
+)
+</pre>
+
+
+
+<p>Wait for both results, but cancel everything if either fails.</p>
+
+
+
+<h3 class="wp-block-heading">Retry with Exponential Backoff</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">val data = retry(
+    maxAttempts = 3,
+    initialDelay = 100.milliseconds,
+    factor = 2.0
+) {
+    fetchFromUnreliableApi()
+}
+</pre>
+
+
+
+<p>Automatically retries failed operations with configurable backoff.</p>
+
+
+
+<h3 class="wp-block-heading">Timeouts</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">val result = withTimeout(5.seconds) {
+    slowBlockingOperation()
+}
+</pre>
+
+
+
+<p>Clean timeout handling with proper cancellation.</p>
+
+
+
+<h2 class="wp-block-heading">🏗️ Lifecycle Management</h2>
+
+
+
+<p>ABCoroutines provides explicit lifecycle control:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">// Application startup
+ABCoroutines.ensureRunning()
+
+// Long-running background task
+applicationScope.launch {
+    while (isActive) {
+        processQueue()
+        delay(1.minutes)
+    }
+}
+
+// Graceful shutdown
+ABCoroutines.shutdown(timeout = 30.seconds)
+</pre>
+
+
+
+<p>No hidden state, no global magic — just predictable behavior.</p>
+
+
+
+<h2 class="wp-block-heading">🔄 Java Interoperability</h2>
+
+
+
+<p>Need to integrate with Java code?</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">val executor: ExecutorService = ABCoroutines.asExecutorService()
+
+// Pass to Java libraries expecting ExecutorService
+javaLibrary.setExecutor(executor)
+</pre>
+
+
+
+<p>Virtual threads work seamlessly with existing Java concurrency APIs.</p>
+
+
+
+<h2 class="wp-block-heading">🎯 Real-World Use Cases</h2>
+
+
+
+<h3 class="wp-block-heading">Web Server Request Handling</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">applicationScope.launch(VirtualThreads) {
+    val (user, permissions, settings) = parallel(
+        { userRepository.findById(userId) },
+        { permissionService.getPermissions(userId) },
+        { settingsRepository.getSettings(userId) }
+    )
+    
+    buildResponse(user, permissions, settings)
+}
+</pre>
+
+
+
+<h3 class="wp-block-heading">Database Connection Pool Integration</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">// Run blocking JDBC calls on virtual threads
+suspend fun &lt;T> withConnection(block: (Connection) -> T): T {
+    return withContext(VirtualThreads) {
+        dataSource.connection.use { conn ->
+            block(conn)
+        }
+    }
+}
+</pre>
+
+
+
+<h3 class="wp-block-heading">External API Integration with Fallbacks</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">val data = raceForSuccess(
+    { primaryApi.fetch() },
+    { 
+        delay(500.milliseconds)
+        secondaryApi.fetch() 
+    }
+)
+</pre>
+
+
+
+<p>Try the primary API, but switch to secondary if it's too slow.</p>
+
+
+
+<h2 class="wp-block-heading">📊 Why Virtual Threads?</h2>
+
+
+
+<p>Virtual threads shine when you have:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Many concurrent blocking operations</strong> (database queries, file I/O, HTTP calls)</li>
+
+
+
+<li><strong>Legacy blocking code</strong> that can't easily be converted to async</li>
+
+
+
+<li><strong>Simpler mental model</strong> than async/await for I/O-bound work</li>
+</ul>
+
+
+
+<p>ABCoroutines gives you virtual threads with the structured concurrency guarantees you expect from Kotlin.</p>
+
+
+
+<h2 class="wp-block-heading">🚀 Getting Started</h2>
+
+
+
+<p>Available on Maven Central:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">dependencies {
+    implementation("tech.robd:abcoroutines:0.1.0")
+}
+</pre>
+
+
+
+<p><strong>Requirements:</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li>Kotlin 2.0+</li>
+
+
+
+<li>Java 21 or later</li>
+
+
+
+<li>kotlinx.coroutines</li>
+</ul>
+
+
+
+<p><strong>Quick Start:</strong></p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">import tech.robd.abcoroutines.*
+
+fun main() {
+    ABCoroutines.ensureRunning()
+    
+    runBlocking {
+        val result = withContext(VirtualThreads) {
+            // Your blocking code here
+            performBlockingOperation()
+        }
+        println("Result: $result")
+    }
+    
+    ABCoroutines.shutdown()
+}
+</pre>
+
+
+
+<h2 class="wp-block-heading">🎓 Design Philosophy</h2>
+
+
+
+<p>ABCoroutines follows three principles:</p>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Explicit over Implicit</strong>: No hidden global state or context injection</li>
+
+
+
+<li><strong>Composable Primitives</strong>: Build complex patterns from simple building blocks</li>
+
+
+
+<li><strong>Fail-Safe Defaults</strong>: Proper cancellation and resource cleanup by default</li>
+</ol>
+
+
+
+<h2 class="wp-block-heading">🔗 Learn More</h2>
+
+
+
+<ul class="wp-block-list">
+<li><strong>GitHub</strong>: <a href="https://github.com/robdeas/abcoroutines">github.com/robdeas/abcoroutines</a></li>
+
+
+
+<li><strong>Documentation</strong>: Full examples and API docs in the README</li>
+
+
+
+<li><strong>Maven Central</strong>: <a href="https://central.sonatype.com/artifact/tech.robd/abcoroutines">central.sonatype.com/artifact/tech.robd/abcoroutines</a></li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">💭 Final Thoughts</h2>
+
+
+
+<p>Virtual Threads are powerful, but raw threads aren't enough. ABCoroutines gives you the structure you need without sacrificing transparency.</p>
+
+
+
+<p>If you're building JVM server applications with blocking I/O, give it a try. It's designed to be small, clear, and composable — no magic required.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>Try ABCoroutines today and let me know what you think!</strong> Issues, suggestions, and contributions are welcome on GitHub.</p>

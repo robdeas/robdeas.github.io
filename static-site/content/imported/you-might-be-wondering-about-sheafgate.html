@@ -1,0 +1,201 @@
+<p>After publishing <a href="#">SheafGate: Building Desktop Apps with SvelteKit and Bun, Without Electron</a>, I've been thinking about the questions people are likely to have when they first look at the architecture. Some of these are questions I asked myself during development. Some are the kind of thing a code reviewer would flag. All of them are worth answering properly.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...why Go for the launcher and not TypeScript?</strong></p>
+
+
+
+<p>You could write the launcher in TypeScript and run it on Bun. It would work, technically. But you'd be running the launcher and the app in the same process, which defeats the fundamental point — the launcher <em>watching over</em> the app is the whole architecture. The separation of concerns is the feature.</p>
+
+
+
+<p>Beyond that, Bun's event loop is excellent for the app itself but a process supervisor that needs to reliably monitor, signal, and potentially outlive a child process is a better fit for Go's threading model. Goroutines make the heartbeat loop, the process monitor, and the HTTP client genuinely concurrent without async/await complexity.</p>
+
+
+
+<p>Go also compiles to a single self-contained binary with no runtime dependency. The standard library has everything needed — <code>os/exec</code> for process management, <code>crypto/rand</code> for the password, <code>net/http</code> for the heartbeat — without pulling in external dependencies. The launcher is about 250 lines. It's not complicated.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...why does it use an HTTP port at all?</strong></p>
+
+
+
+<p>Because SvelteKit is a web framework and HTTP is what it does. There's no embedded webview, no native bridge, no stripped-down runtime. The finished app is just an ordinary web app, which means you get everything that implies: full browser devtools, standard web APIs, no framework-specific constraints on what you can build. The "desktop" part is the launcher opening your system browser pointed at localhost.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...why not Electron, Tauri, or Wails?</strong></p>
+
+
+
+<p>Those are all reasonable choices for the right project. The difference is that SheafGate makes no modifications to your SvelteKit app whatsoever. There's no embedded webview to target, no Rust bridge to learn, no IPC layer to design around. If you already have a SvelteKit app and you want it to behave like a desktop app on machines you control, SheafGate adds that with a handful of files without touching your existing code.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...why not HTTPS?</strong></p>
+
+
+
+<p>The server only ever binds to <code>127.0.0.1</code> on a randomly chosen port. Traffic never leaves the machine, which makes interception genuinely difficult. The one-time password is sent in the clear on that first login request, yes — but only to localhost. Its job isn't to protect against network eavesdropping, it's to stop another process that happens to find the same random port from being able to authenticate. For a local desktop app that threat model is entirely adequate.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...why the shared UUID?</strong></p>
+
+
+
+<p>The UUID is baked into both the launcher and the app at compile time from the same generated value. This ties a specific launcher binary to a specific app build. If another process is sitting on the same port, it won't know the UUID and the login fails immediately. It's a pairing mechanism, not a secret.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...is the UUID secret?</strong></p>
+
+
+
+<p>Not necessarily. Its value isn't in being secret — it's in being shared only between the launcher and the app it was built with. You could treat it as an additional key if you wanted to, but that's not its purpose. The real security comes from the combination of the random port, the one-time password, and the localhost-only binding working together.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...can I debug it like a normal web app?</strong></p>
+
+
+
+<p>Yes, and this is one of the better properties of the approach. Run the app in dev mode and the one-time password appears in your terminal output. Use that password along with the build UUID to hit the login endpoint directly, and from that point you have a normal authenticated browser session with full devtools available. Nothing about the auth mechanism interferes with the standard web debugging workflow.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...why the <code>/sheafgate-control</code> endpoint name?</strong></p>
+
+
+
+<p>It needed to be something unlikely to clash with routes in an existing application. A generic name like <code>/auth</code> or <code>/login</code> would conflict with apps that already have those routes. <code>/sheafgate-control</code> is specific enough to be collision-resistant without being obscure.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...why not compile it to a single binary?</strong></p>
+
+
+
+<p>That would break SvelteKit. The framework expects its build output to be a collection of files — JS chunks, assets, the server entry point — and collapsing that into a single binary would require either an embedded filesystem or a custom bundler that fights against how SvelteKit works. Keeping the Bun app as ordinary build output sitting alongside the launcher means nothing about the SvelteKit build process needs to change.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...is it safe to distribute?</strong></p>
+
+
+
+<p>Yes. The TypeScript source files are present in the distribution but minified, so casual inspection won't reveal much. If you want stronger guarantees the Go launcher can be modified to verify checksums of the engine files before starting — that would detect tampering and refuse to launch if anything has been modified. That's not in the demo but it's a natural extension for anyone distributing to untrusted environments.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...how do I build it?</strong></p>
+
+
+
+<p>Set the engine URL in the Makefile variable. The UUID lives in env files that are committed as defaults — update them manually to match, or just delete them and they get recreated automatically when you build. Then from the launcher folder, in Git Bash:</p>
+
+
+
+<p>bash</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">make dist</pre>
+
+
+
+<p>That generates a fresh UUID, passes it to both the Go and Bun builds, recreates the env files, and produces the distribution: a minified SvelteKit app in the <code>build</code> folder, the Bun runtime, and the Go launcher executable.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...why Git Bash on Windows?</strong></p>
+
+
+
+<p>The Makefile uses Unix shell syntax. Command Prompt and PowerShell both handle this badly. Git Bash gives you a proper Unix shell on Windows without needing WSL, and most developers working with Go and Bun on Windows will already have it installed.</p>
+
+
+
+<p>The Makefile deliberately uses built-in shell commands rather than Linux-specific ones, so native Windows tooling <em>could</em> work in principle. In practice, getting make running natively on Windows requires setting up MSYS2 or similar, and that overhead isn't worth it when Git Bash is already the right answer.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...what platforms does it run on?</strong></p>
+
+
+
+<p>Version 0.1 has been tested on Windows, which is actually where this pattern is most useful — Windows users have the fewest good options for running web apps as lightweight desktop apps without heavyweight frameworks. Linux support is implemented and coming soon. The code is there but not fully tested yet.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><strong>...is this a framework or a pattern?</strong></p>
+
+
+
+<p>Mostly a pattern. The launcher is ~250 lines of Go and the engine-side auth library is a small handful of TypeScript files — both are designed to be copied into your own project and adapted rather than installed as a dependency. You own the code, you can change it, and the protocol between the two sides is simple enough that you could implement the engine in any language. Java and Kotlin implementations are on the roadmap.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p>The demo repo is at <a href="https://github.com/robdeas/sheafgatedemo">github.com/robdeas/sheafgatedemo</a>. If you have a question that isn't answered here, drop it in the comments and I'll add it to the list.</p>

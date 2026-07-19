@@ -1,0 +1,260 @@
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading"></h2>
+
+
+
+<h1 class="wp-block-heading">✨ Modern Logging Lessons from Python, Android &amp; Beyond: Why server-side Java and Kotlin frameworks should borrow more from modern logging approaches found in other ecosystems.</h1>
+
+
+
+<p>Server-side Java has a long history — and a lot of baggage. When it comes to logging, most teams still default to familiar names like SLF4J, Logback, or Log4j. They’re powerful, performant, and battle-tested.</p>
+
+
+
+<p>But they’re also noisy, clunky, and verbose.</p>
+
+
+
+<p>Meanwhile, other ecosystems — especially <strong>Python</strong>, <strong>Android</strong>, and <strong>Kotlin’s own functional libraries</strong> — have been quietly reinventing what logging can feel like.</p>
+
+
+
+<p>This post makes the case that <strong>server-side Kotlin is overdue for a more expressive, ergonomic, and developer-friendly logging approach.</strong></p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">? The State of Logging in Java/Kotlin</h2>
+
+
+
+<p>Most Spring or backend Kotlin apps use this kind of pattern:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">private val logger = LoggerFactory.getLogger(MyService::class.java)
+
+fun doWork() {
+    logger.info("Starting work")
+    logger.debug("Fetching data for id={}", id)
+}
+</pre>
+
+
+
+<p>It works well — but it’s noisy.</p>
+
+
+
+<ul class="wp-block-list">
+<li>The logger is always injected manually</li>
+
+
+
+<li>The messages are flat strings with placeholders</li>
+
+
+
+<li>MDC (context) is an afterthought, not a first-class pattern</li>
+
+
+
+<li>There’s no expressiveness beyond <code>INFO</code>, <code>WARN</code>, etc.</li>
+</ul>
+
+
+
+<p>Now compare that to modern libraries in other ecosystems.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">? What Timber Taught Us (Android)</h2>
+
+
+
+<p><a href="https://github.com/JakeWharton/timber">Timber</a> is a logging library in Android, known for:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Auto-tagging logs with the calling class name</li>
+
+
+
+<li>Replacing <code>Log.d(TAG, ...)</code> with <code>Timber.d(...)</code></li>
+
+
+
+<li>Minimal boilerplate</li>
+</ul>
+
+
+
+<p>It shows that logs don’t have to be painful. Logging should get out of your way..</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">? Python’s Loguru: Logging Without the Pain</h2>
+
+
+
+<p><a href="https://github.com/Delgan/loguru">Loguru</a> in Python shows what happens when logging is reimagined from scratch:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">from loguru import logger
+logger.info("Hello")
+logger.bind(user="abc123").info("User logged in")
+</pre>
+
+
+
+<p>It’s:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Very simple to start using</li>
+
+
+
+<li>Supports structured context</li>
+
+
+
+<li>Decorates logs with helpful symbols and rich output</li>
+</ul>
+
+
+
+<p>No config. No boilerplate. Just expressive logs.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">? Functional Kotlin &amp; DSLs</h2>
+
+
+
+<p>Frameworks like <strong>Ktor</strong>, <strong>Arrow</strong>, and <strong>Compose</strong> embrace the power of DSLs. They make code feel like it describes <em>what</em> you're doing, not just <em>how</em>.</p>
+
+
+
+<p>So why not logging?</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">LOG_DB log "Fetched 3 rows"
+LOG_HANDLER logAt (warn to "Slow response")
+</pre>
+
+
+
+<p>This kind of clarity is achievable — but absent from mainstream server-side Java/Kotlin frameworks.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">? Enter emoji-logger</h2>
+
+
+
+<p>Inspired by all of the above, I built <a href="https://github.com/robdeas/emoji-logger">emoji-logger</a> as a Kotlin-native logging utility that:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Wraps SLF4J but gives you expressive emoji symbols</li>
+
+
+
+<li>Resolves loggers automatically using stack inspection</li>
+
+
+
+<li>Supports coroutine-aware MDC blocks</li>
+
+
+
+<li>Feels modern, declarative, and fun</li>
+</ul>
+
+
+
+<p>You still get the power of Logback — but with a logging API that feels like Kotlin.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">? Time to Rethink What Logging <em>Could</em> Be</h2>
+
+
+
+<p>Other ecosystems are moving fast:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Python logs are structured and bindable</li>
+
+
+
+<li>Android logs are auto-tagged</li>
+
+
+
+<li>JS logs are console-rich and context aware</li>
+</ul>
+
+
+
+<p>Why are we still writing boilerplate in Kotlin?</p>
+
+
+
+<p>Let’s rethink logs — not just as text, but as <strong>developer experience</strong>.</p>
+
+
+
+<blockquote class="wp-block-quote">
+<p>emoji-logger is my attempt to bring those ideas to the server-side JVM world.</p>
+
+
+
+<p>If you’ve ever wanted your logs to be cleaner, richer, or just more <em>you</em>, give it a try.</p>
+</blockquote>
+
+
+
+<p>? <a href="https://github.com/robdeas/emoji-logger">Check out the GitHub project</a></p>
+
+
+
+<p>And let me know what you'd want logging to look like in the next generation of Kotlin frameworks.</p>
+
+
+
+<p>— Rob</p>

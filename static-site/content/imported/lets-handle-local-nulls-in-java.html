@@ -1,0 +1,174 @@
+<h1 class="wp-block-heading">Beyond the Gap: Introducing NotNull4J 0.1.0</h1>
+
+
+
+<p>Static analysis is a powerful ally in the fight against <code>NullPointerException</code>, but it isn’t a silver bullet. We’ve all seen it: a <code>@NonNull</code> parameter that somehow arrives as <code>null</code> due to reflection abuse, serialization quirks, or raw-type interop. Today, I’m excited to announce the initial release of <strong>NotNull4J (v0.1.0)</strong>. Its a small multi-module library designed to bridge the gap between static type hints and runtime reality.</p>
+
+
+
+<h3 class="wp-block-heading">Why NotNull4J? Bridging the Local Variable Gap</h3>
+
+
+
+<p>Static analysis in Java has taken a massive leap forward with <strong>JSpecify</strong>, which provides a long-awaited standard for nullability contracts in APIs. However, JSpecify explicitly skips local variables.</p>
+
+
+
+<p>In Java, local variables often exist in a state of flux. Even if an API is marked <code>@NonNull</code>, a local variable might not be initialized immediately or might be reassigned during complex logic. Unlike Kotlin, which has null-safety baked into the language syntax, Java must remain cautious. A local variable is effectively <strong>"nullable by default"</strong> until it is assigned.</p>
+
+
+
+<p>JSpecify is great for defining the "contract at the door," but it doesn't follow you into the room. NotNull4J 0.1.0 allows you to set defaults or fail-fast the moment a null is found, keeping your local logic as clean and safe as a Kotlin codebase.</p>
+
+
+
+<h3 class="wp-block-heading">The Three Pillars of NotNull4J</h3>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Reliability</strong>: The core engine launches with <strong>97% test coverage</strong>, ensuring that your null-handling policies behave exactly as expected.</li>
+
+
+
+<li><strong>Explicit Policies</strong>: Whether you need to <code>orThrow()</code>, <code>orLog()</code>, or normalize collections with <code>listOrEmpty()</code>, the API is designed for readability and intent.</li>
+
+
+
+<li><strong>Defensive Verification</strong>: The library introduces the <code>verify()</code> pattern, performing a runtime "heartbeat" check when assigning supposedly non-null values to local variables.</li>
+</ul>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">Code Evolution: From "Paranoid Java" to NotNull4J</h3>
+
+
+
+<p>To see the value of NotNull4J, we have to look at how it transforms standard defensive code.</p>
+
+
+
+<p><strong>Standard Java (The "If-Else" Forest)</strong></p>
+
+
+
+<p></p>
+
+
+
+<pre class="wp-block-preformatted"><code>public void processOrder(@Nullable Order input) {</code>
+<code>    </code><code>Order order = (input != null) ? input : Order.EMPTY;</code>
+<code>    </code><code>String customerName = "Unknown";</code>
+<code>    </code><code>if (order.getCustomer() != null) {</code>
+<code>        </code><code>customerName = order.getCustomer().getName();</code>
+<code>    </code><code>}</code>
+<code>    </code><code>System.out.println("Processing: " + customerName);</code>
+<code>}</code></pre>
+
+
+
+<p><strong>The NotNull4J Way (Kotlin-esque Clarity)</strong></p>
+
+
+
+<p></p>
+
+
+
+<pre class="wp-block-preformatted"><code>public void processOrder(@Nullable Order input) {</code>
+<code>    </code><code>// Enforcement at the point of assignment</code>
+<code>    </code><code>@LocalNotNull final var order = NotNull.orDefault(input, Order.EMPTY);</code>
+<code>    </code>
+<code>    </code><code>// Safe extraction with lazy fallbacks</code>
+<code>    </code><code>@LocalNotNull final var name = NotNull.orGet(order.getCustomerName(), () -&gt; "Unknown");</code>
+<code>    </code>
+<code>    </code><code>System.out.println("Processing: " + name);</code>
+<code>}</code></pre>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">Deep Dive: The <code>verify()</code> Pattern</h3>
+
+
+
+<p>The centerpiece of the library is <code>NotNull.verify()</code>. While static analysis tools might flag a null-check on a <code>@NonNull</code> parameter as redundant, NotNull4J treats these as essential defensive boundaries.</p>
+
+
+
+<p></p>
+
+
+
+<pre class="wp-block-preformatted"><code>public void processUser(@NonNull User user) {</code>
+<code>    </code><code>// Defend against reflection or serialization bugs</code>
+<code>    </code><code>@LocalNotNull final var verifiedUser = NotNull.verify(user);</code>
+<code>    </code><code>// Now truly safe at both compile-time and runtime</code>
+<code>}</code></pre>
+
+
+
+<p>To prevent "SillyCheck" warnings in your own linters, we've handled the suppression internally so you can focus on writing clean code.</p>
+
+
+
+<h3 class="wp-block-heading">Architectural Enforcement with <code>@LocalNotNull</code></h3>
+
+
+
+<p>NotNull4J isn't just a utility class; it's a workflow. The <code>notnull4j-pmd</code> module provides custom rules to ensure your team is using these runtime-safe methods correctly. It specifically enforces that variables marked with <code>@LocalNotNull</code> are initialized and reassigned <strong>only</strong> through validated NotNull4J paths.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">Java + NotNull4J vs. Kotlin: Syntax Comparison</h3>
+
+
+
+<p>We recognize that while we cannot change Java's syntax to match Kotlin's <code>?</code> or <code>!!</code>, we can provide the next best thing: expressive methods that provide the same functional results.</p>
+
+
+
+<figure class="wp-block-table"><table class="has-fixed-layout"><thead><tr><td><strong>Feature</strong></td><td><strong>Kotlin Syntax</strong></td><td><strong>NotNull4J (Java 11+)</strong></td></tr></thead><tbody><tr><td><strong>Non-null assignment</strong></td><td><code>val x: String = value</code></td><td><code>@LocalNotNull final var x = NotNull.verify(value);</code></td></tr><tr><td><strong>Default fallback</strong></td><td><code>val x = value ?: "default"</code></td><td><code>var x = NotNull.orDefault(value, "default");</code></td></tr><tr><td><strong>Lazy fallback</strong></td><td><code>val x = value ?: compute()</code></td><td><code>var x = NotNull.orGet(value, () -&gt; compute());</code></td></tr><tr><td><strong>Throw on null</strong></td><td><code>val x = value!!</code></td><td><code>var x = NotNull.orThrow(value);</code></td></tr><tr><td><strong>Safe collection</strong></td><td><code>val list = input ?: emptyList()</code></td><td><code>var list = NotNull.listOrEmpty(input);</code></td></tr></tbody></table></figure>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">Getting Started (0.1.0 Initial Launch)</h3>
+
+
+
+<p>We are currently in our initial launch phase while we prepare for the 0.1.1 Maven Central release.</p>
+
+
+
+<h3 class="wp-block-heading">The Verdict</h3>
+
+
+
+<p>JSpecify is great for defining contracts, but it isn't enough to save us from nulls inside our method bodies. By using NotNull4J, you get the best of both worlds: standard API contracts and runtime-safe local variables.</p>
+
+
+
+<p><strong>Open Source and MIT Licensed</strong></p>
+
+
+
+<p>I believe null safety should be a standard, not a premium feature. NotNull4J is released under the <strong>MIT License</strong>, encouraging wide adoption and community contribution.</p>
+
+
+
+<p>Check out the source, view the coverage reports, and grab the release over at GitHub: <a href="https://github.com/robdeas/notnull4j" target="_blank" rel="noreferrer noopener">github.com/robdeas/notnull4j</a></p>

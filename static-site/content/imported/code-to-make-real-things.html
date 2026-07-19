@@ -1,0 +1,298 @@
+<p>This blog is an introduction to using Python programs to design 3D printable objects. and uses Python Ansible Jupyter Labs Notebooks and CadQuery</p>
+
+
+
+<p>A lot of program code just affects what is on screen, though software controlls almost all aspects of our environment. One of the many ways this can happen is via 3D pinting. It is common to use CAD software to design items to be 3D printed, but this can also be done by a Python Program running CadQuery. This is an approach I use to make cases for electronics and boxes. There are a few reasons for this: I have a background in programming so it feels a natural way to do it. Most of the stuff I print is basically boxes of different shapes with rounded corners, which have bits cut out, and maybe text. Using a python program makes it easy to base an item on a previous design. CadQuery has now been out for a couple of years, so you may have heard about it before, This post is is about how to set it up.</p>
+
+
+
+<p>One of the biggest advantages of using Python and CadQuery is the ability to easily modify and adapt designs. Imagine you've created a perfect case for your electronics project. Now you need a slightly larger version for a different device. Instead of redesigning the entire thing in a traditional CAD program, you can simply tweak a few parameters in your Python code.</p>
+
+
+
+<p>For example, let's say you have a variable called <code>box_height</code> in your code. To create a taller box, you just change the value of that variable. Need a wider box? Adjust the <code>box_width</code> variable. This makes it incredibly efficient to create variations of a design, or even generate a whole family of related objects with different dimensions.</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">import cadquery as cq
+
+# Define parameters
+box_width = 10
+box_height = 5
+box_length = 20
+
+# Create the box
+result = cq.Workplane("XY").box(box_width, box_length, box_height)
+
+# ... (rest of your code to export the model)
+</pre>
+
+
+
+<p>In this example, changing the values of <code>box_width</code>, <code>box_height</code>, and <code>box_length</code> will instantly create a box with different dimensions. This parametric approach allows for flexible and efficient design iteration.</p>
+
+
+
+<p>CadQuery is so useful, but a little bit of a pain to set the environment up so I will show my Ansible playbook to set it up. I will write this document as an introduction as it might be useful to hobbyists who would like to play with this type of 3d printing and would like a getting started guide.</p>
+
+
+
+<p>I am assuming that you have a recent Windows PC with WSL2 running and Ubuntu 24.04 installed, I believe this will work on ordinary Ubuntu, but have not tested it. I do my 3D printing from a Windows PC.</p>
+
+
+
+<p>In a Ubuntu command window.  Install Ansible if you don't have it  </p>
+
+
+
+<pre class="wp-block-code"><code>sudo add-apt-repository --yes --update ppa:ansible/ansible
+sudo apt install -y ansible</code></pre>
+
+
+
+<p>What is Ansible ? Ansible is an open-source tool used for automating software provisioning, configuration management, and application deployment.</p>
+
+
+
+<p>Why I use Ansible rather than doing things manually: To<strong> <em>Eliminate Human Error</em></strong>: Manual configuration is prone to typos, inconsistencies, and forgotten steps. Ansible ensures every server is configured <em>exactly</em> the same way every time.</p>
+
+
+
+<p>Ansible uses a declarative approach, where you define the desired state of your system. Ansible figures out how to get there. Shell scripts are typically imperative, requiring you to specify each step in detail.</p>
+
+
+
+<p>Check the Ansible version to ensure it’s installed correctly:</p>
+
+
+
+<pre class="wp-block-code"><code><code>ansible --version</code></code></pre>
+
+
+
+<p></p>
+
+
+
+<p>Now we have ansible installed we can create a playbook to install cad-query. It is very fussy about its dependencies and easily breaks, but it is such a useful tool its worth it, and Ansible will easily let us recreate the environment if things go wrong.</p>
+
+
+
+<p>This playbook does the following:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Adds the Deadsnakes PPA to install Python 3.8 (required for CADQuery).</li>
+
+
+
+<li>Sets up a Python virtual environment to keep our project dependencies isolated.</li>
+
+
+
+<li>Installs CadQuery, Jupyter Lab, and jupyter-cadquery within the virtual environment.</li>
+
+
+
+<li>Creates a handy startup script to launch Jupyter Lab with the CadQuery environment activated.</li>
+</ul>
+
+
+
+<p>NOTE: It's strongly recommended to place the playbook in your home directory. You'll also need to be in your home directory to run it, as the playbook uses the starting folder as the base folder for the virtual environment.</p>
+
+
+
+<p></p>
+
+
+
+<pre class="wp-block-code"><code># MIT LICENCE
+#
+# Copyright (c) 2025 Robert Deas
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE. 
+- name: Set up CadQuery environment in the current directory
+  hosts: localhost
+  become: true
+  vars:
+    venv_path: "{{ current_dir }}/cadquery-env"
+
+  tasks:
+    - name: Get the current working directory
+      command: pwd
+      register: pwd_result
+
+    - name: Set current_dir variable
+      set_fact:
+        current_dir: "{{ pwd_result.stdout }}"
+
+    - name: Display the current working directory
+      debug:
+        msg: "The current directory is: {{ current_dir }}"
+
+    - name: Ensure software-properties-common is installed
+      apt:
+        name: software-properties-common
+        state: present
+
+    - name: Check if Deadsnakes PPA is already added
+      shell: grep -h "^deb .+deadsnakes" /etc/apt/sources.list /etc/apt/sources.list.d/* || true
+      register: deadsnakes_ppa
+      changed_when: false
+
+    - name: Add Deadsnakes PPA if not already present
+      apt_repository:
+        repo: ppa:deadsnakes/ppa
+        state: present
+      when: deadsnakes_ppa.stdout == ""
+
+    - name: Update APT cache
+      apt:
+        update_cache: yes
+
+    - name: Install Python 3.8 and required tools
+      apt:
+        name:
+          - python3.8
+          - python3.8-venv
+          - python3.8-distutils
+        state: present
+
+    - name: Create a Python virtual environment in the current directory
+      shell: python3.8 -m venv {{ venv_path }}
+      args:
+        creates: "{{ venv_path }}"
+
+    - name: Upgrade pip, setuptools, and wheel in the virtual environment
+      shell: |
+        . {{ venv_path }}/bin/activate
+        pip install --upgrade pip setuptools wheel --break-system-packages
+      args:
+        executable: /bin/bash
+
+    - name: Install CadQuery and Jupyter Lab in the virtual environment
+      shell: |
+        . {{ venv_path }}/bin/activate
+        pip install cadquery jupyterlab --break-system-packages
+      args:
+        executable: /bin/bash
+
+    - name: Downgrade pip to handle metadata issues
+      shell: |
+        . {{ venv_path }}/bin/activate
+        pip install pip==23.2.1 --break-system-packages
+      args:
+        executable: /bin/bash
+
+    - name: Install jupyter-cadquery
+      shell: |
+        . {{ venv_path }}/bin/activate
+        pip install jupyter-cadquery==3.5.1 --break-system-packages
+      args:
+        executable: /bin/bash
+
+    - name: Create a startup script for CadQuery environment
+      copy:
+        content: |
+          #!/bin/bash
+          source {{ venv_path }}/bin/activate
+          jupyter lab
+        dest: "{{ current_dir }}/start_cadquery.sh"
+        mode: '0755'
+
+    - name: Display success message
+      debug:
+        msg: |
+          CadQuery setup is complete.
+          To start Jupyter Lab, run: {{ current_dir }}/start_cadquery.sh
+</code></pre>
+
+
+
+<p>This first part defines the playbook's name, specifies that it runs on the local machine (<code>localhost</code>), and uses <code>become: true</code> to run commands with elevated privileges (like <code>sudo</code>). We also define a variable <code>venv_path</code> to store the location of our virtual environment.</p>
+
+
+
+<p>These tasks get the current working directory and store it in a variable called <code>current_dir</code>. This is useful for making the playbook more flexible.</p>
+
+
+
+<p>This section installs <code>software-properties-common</code>, which is needed to manage PPAs (Personal Package Archives). It then adds the Deadsnakes PPA (if it's not already there) to install Python 3.8 and updates the package list.</p>
+
+
+
+<p>These tasks create the virtual environment, upgrade <code>pip</code>, and install the necessary packages (<code>cadquery</code>, <code>jupyterlab</code>, and <code>jupyter-cadquery</code>). It also downgrades <code>pip</code> to a specific version to avoid potential metadata issues.</p>
+
+
+
+<p>Finally, the playbook creates a startup script (<code>start_cadquery.sh</code>) that activates the virtual environment and launches Jupyter Lab. The <code>debug</code> task displays a success message with instructions on how to run the script.</p>
+
+
+
+<p>To run this playbook, save it as a <code>.yml</code> file (e.g., <code>cadquery_setup.yml</code>) in your home directory. Then, open a terminal in your home directory and run the command: <code>ansible-playbook cadquery_setup.yml</code></p>
+
+
+
+<p>NOTE: It's strongly recommended to place the playbook in your home directory. This provides a consistent starting point and avoids potential permission issues, especially if you're new to Linux. This also makes it easy to access and run the playbook. You'll need to be in your home directory to run it, as the playbook uses this as the base folder for the virtual environment.</p>
+
+
+
+<p>Once it is installed, this will allow you to run CadQuery by changing to your home directory and running <code>start_cadquery.sh</code>. This will display a link in the command window. You can click on the URL to open it in a web browser. You can then choose the "create Python notebook" option and start coding.</p>
+
+
+
+<p>In the Python notebook we will start with</p>
+
+
+
+<pre class="wp-block-code"><code>from jupyter_cadquery import show_object<br>import cadquery as cq</code></pre>
+
+
+
+<p>You will need these to see the 3d object and to export the .stl file you will use to "slice" and prepare for printing</p>
+
+
+
+<p>At the end i have</p>
+
+
+
+<pre class="wp-block-code"><code># Show the final case with lip
+show_object(case1, name="Case with text")
+
+# Export the case as an STL
+cq.exporters.export(case1, "/mnt/c/3d-models/case-with-text.stl")</code></pre>
+
+
+
+<p>This exports to a folder I can see in Windows and provides me a view of the printable object.</p>
+
+
+
+<p>Note: cadquery doesnt always clear up properly so it is important to stop the kernel and clear all outputs every time you run a model, or cutouts probably wont get applied properly. Fortunately there is a menu entry fo this in the UI.</p>
+
+
+
+<p></p>
+
+
+
+<p>The Ansible script makes this a simple way to set up CadQuery and get into Parametric 3D printing. I feel this is a good way to get into 3D printing and design if you wish to make functional objects. </p>

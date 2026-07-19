@@ -1,0 +1,3124 @@
+<p></p>
+
+
+
+<h2 class="wp-block-heading">Introduction</h2>
+
+
+
+<p>Sandcastle Auth is an authentication server designed for testing, debugging, and educational purposes. It provides a Spring Boot-based JWT authentication solution that allows developers to experiment with, learn about, and test authentication flows in a controlled environment. This project is explicitly <strong>not intended for production use</strong> but instead offers a transparent sandbox for understanding JWT concepts and testing authentication implementations.</p>
+
+
+
+<p>The project is dual-licensed under both the Apache License 2.0 and the MIT License, giving users the flexibility to choose whichever license better suits their needs. </p>
+
+
+
+<p>See my github for full source <a href="https://github.com/robdeas/sandcastle-auth">https://github.com/robdeas/sandcastle-auth</a></p>
+
+
+
+<h2 class="wp-block-heading">Origin and Purpose</h2>
+
+
+
+<p>Sandcastle Auth originated as a practical testing tool to address a specific challenge: debugging authentication issues in complex containerized environments. When working with multiple containers in Kubernetes deployments, tracing authentication flows and diagnosing JWT-related problems can be particularly difficult.</p>
+
+
+
+<p>During the initial design phase, it became apparent that the same qualities that made it valuable for testing—transparency, configurability, and simplicity—also made it an excellent educational resource. This led to a dual focus on both testing and educational aspects.</p>
+
+
+
+<h3 class="wp-block-heading">Primary Use Cases</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Testing Authentication Flows</strong>
+<ul class="wp-block-list">
+<li>Integration testing of microservices with JWT authentication</li>
+
+
+
+<li>Debugging authentication issues in containerized environments</li>
+
+
+
+<li>Validating token handling in client applications</li>
+
+
+
+<li>Simulating various token states (valid, expired, revoked)</li>
+</ul>
+</li>
+
+
+
+<li><strong>Educational Tool</strong>
+<ul class="wp-block-list">
+<li>Learning JWT concepts and implementation details</li>
+
+
+
+<li>Teaching authentication and authorization principles</li>
+
+
+
+<li>Demonstrating token-based security patterns</li>
+
+
+
+<li>Understanding the security implications of different JWT configurations</li>
+</ul>
+</li>
+
+
+
+<li><strong>System Testing</strong>
+<ul class="wp-block-list">
+<li>Debugging authentication issues in Kubernetes environments</li>
+
+
+
+<li>Validating API security implementations</li>
+
+
+
+<li>Testing client-side token handling</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h2 class="wp-block-heading">Features</h2>
+
+
+
+<h3 class="wp-block-heading">Core Functionality</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Basic username/password authentication</li>
+
+
+
+<li>Domain-based user segregation</li>
+
+
+
+<li>Simple role-based access control</li>
+
+
+
+<li>JWT token generation &amp; validation</li>
+
+
+
+<li>H2 in-memory database support (for quick demos)</li>
+
+
+
+<li>Extensive logging for visibility into authentication flows</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Testing-Focused Features</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Lightweight service that can be deployed alongside application containers</li>
+
+
+
+<li>Configurable token properties for testing different scenarios</li>
+
+
+
+<li>Simple API for token issuance and validation</li>
+
+
+
+<li>Easy integration with testing frameworks</li>
+
+
+
+<li>Support for test automation in CI/CD pipelines</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Educational Features</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Transparent JWT creation and validation</li>
+
+
+
+<li>Detailed logging of each authentication step</li>
+
+
+
+<li>Clear code structure prioritizing readability</li>
+
+
+
+<li>Simplified model for understanding token-based authentication</li>
+
+
+
+<li>Well-documented design decisions and trade-offs</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Planned Enhancements</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Configurable token expiration for different domains, roles, and users</li>
+
+
+
+<li>Token revocation capabilities at multiple levels (user, role, domain)</li>
+
+
+
+<li>Database flexibility with both local H2 and remote PostgreSQL options</li>
+
+
+
+<li>Role synchronization from central repositories</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Installation</h2>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Clone the Repository</strong>: bash Copy <code>git clone https://github.com/robdeas/sandcastle-auth.git</code> <code>cd sandcastle-auth</code></li>
+
+
+
+<li><strong>Build the Project</strong>: bash Copy <code>./gradlew build</code></li>
+
+
+
+<li><strong>Check the Config Directory</strong>:
+<ul class="wp-block-list">
+<li><code>config/</code> folder should contain <code>jwt-key.txt</code> (the secret key file)</li>
+
+
+
+<li><code>application.properties</code> or <code>application.yml</code> for basic settings</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h2 class="wp-block-heading">Configuration</h2>
+
+
+
+<h3 class="wp-block-heading">application.properties Highlights</h3>
+
+
+
+<pre class="wp-block-preformatted">properties
+Copy
+<code># Server port configuration</code>
+<code>server.port=8080</code>
+
+<code># Path to your base64-encoded secret key</code>
+<code>jwt.key.file=config/jwt-key.txt</code>
+
+<code># JWT validity in seconds</code>
+<code>jwt.token.validity=86400  # 1 day</code>
+
+<code># Enable/disable H2 console for database inspection</code>
+<code>spring.h2.console.enabled=true</code></pre>
+
+
+
+<h3 class="wp-block-heading">Domain &amp; Role Configuration</h3>
+
+
+
+<pre class="wp-block-preformatted">yaml
+Copy
+<code>security:</code>
+<code>  </code><code>domains:</code>
+<code>    </code><code>- name: "example.com"</code>
+<code>      </code><code>displayName: "Example Domain"</code>
+<code>  </code><code>roles:</code>
+<code>    </code><code>- name: "ADMIN"</code>
+<code>      </code><code>domain: "example.com"</code>
+<code>    </code><code>- name: "USER"</code>
+<code>      </code><code>domain: "example.com"</code>
+<code>  </code><code>users:</code>
+<code>    </code><code>- username: "testuser"</code>
+<code>      </code><code>password: "testpass"</code>
+<code>      </code><code>domain: "example.com"</code>
+<code>      </code><code>roles: ["USER"]</code></pre>
+
+
+
+<h2 class="wp-block-heading">Running the Server</h2>
+
+
+
+<pre class="wp-block-preformatted">bash
+Copy
+<code>java -jar build/libs/sandcastle-auth-1.0.0.jar</code></pre>
+
+
+
+<h3 class="wp-block-heading">Verifying Start-Up</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Logs should show messages about domain creation, user creation, role assignment, etc.</li>
+
+
+
+<li>If H2 console is enabled, you can access it at <code>http://localhost:8080/h2-console</code>
+<ul class="wp-block-list">
+<li>Default JDBC URL: <code>jdbc:h2:mem:testdb</code></li>
+</ul>
+</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">API Endpoints</h2>
+
+
+
+<h3 class="wp-block-heading">Authentication</h3>
+
+
+
+<p><strong>POST /authenticate</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li>Purpose: Validates user credentials, issues a JWT token</li>
+
+
+
+<li>Request Body: json Copy <code>{</code> <code>"username": "testuser",</code> <code>"password": "testpass",</code> <code>"domain": "example.com"</code> <code>}</code></li>
+
+
+
+<li>Success Response (200 OK): json Copy <code>{</code> <code>"token": "eyJhbGciOi..."</code> <code>}</code></li>
+
+
+
+<li>Error Response: 401 Unauthorized if credentials fail</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Validation</h3>
+
+
+
+<p><strong>GET /api/isUserValid</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li>Purpose: Checks if the current user's JWT is valid</li>
+
+
+
+<li>Headers: <code>Authorization: Bearer &lt;jwt-token></code></li>
+
+
+
+<li>Success Response: json Copy <code>{</code> <code>"isValid": true,</code> <code>"username": "testuser",</code> <code>"message": "User is authenticated and valid.",</code> <code>"version": "1",</code> <code>"usernameFromToken": "testuser",</code> <code>"domain": "example.com",</code> <code>"role1": "ADMIN"</code> <code>}</code></li>
+</ul>
+
+
+
+<p><strong>GET /api/isLocalAdmin</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li>Purpose: Tests if the user is a local authentication domain admin</li>
+
+
+
+<li>Headers: <code>Authorization: Bearer &lt;jwt-token></code></li>
+
+
+
+<li>Responses:
+<ul class="wp-block-list">
+<li>200 OK if user is an admin in the specified domain</li>
+
+
+
+<li>403 Forbidden or 401 Unauthorized otherwise</li>
+</ul>
+</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Additional Endpoints</h3>
+
+
+
+<p>Depending on your configuration, you might also have:</p>
+
+
+
+<ul class="wp-block-list">
+<li><code>/api/admin/**</code> for admin-only routes</li>
+
+
+
+<li><code>/api/rest/users/**</code>, <code>/api/rest/roles/**</code>, and so on</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Using Sandcastle Auth for Testing</h2>
+
+
+
+<h3 class="wp-block-heading">Testing Scenarios</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Authentication Flow Testing</strong>
+<ul class="wp-block-list">
+<li>Verify credentials validation</li>
+
+
+
+<li>Test token issuance with different parameters</li>
+
+
+
+<li>Validate error handling for invalid credentials</li>
+</ul>
+</li>
+
+
+
+<li><strong>Token Validation Testing</strong>
+<ul class="wp-block-list">
+<li>Verify that valid tokens are accepted</li>
+
+
+
+<li>Confirm that expired tokens are rejected</li>
+
+
+
+<li>Test handling of tokens with incorrect signatures</li>
+</ul>
+</li>
+
+
+
+<li><strong>Authorization Testing</strong>
+<ul class="wp-block-list">
+<li>Test role-based access control</li>
+
+
+
+<li>Verify domain-based restrictions</li>
+
+
+
+<li>Validate proper handling of insufficient permissions</li>
+</ul>
+</li>
+
+
+
+<li><strong>JWT Lifecycle Testing</strong>
+<ul class="wp-block-list">
+<li>Test token expiration handling</li>
+
+
+
+<li>Verify token renewal processes</li>
+
+
+
+<li>Validate token revocation mechanisms</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Testing with cURL</h3>
+
+
+
+<p><strong>Authenticate and get a token</strong>:</p>
+
+
+
+<pre class="wp-block-preformatted">bash
+Copy
+<code>curl -X POST -H "Content-Type: application/json" \</code>
+<code>  </code><code>-d '{"username":"testuser","password":"testpass","domain":"example.com"}' \</code>
+<code>  </code><code>http://localhost:8080/authenticate</code></pre>
+
+
+
+<p><strong>Use the token</strong>:</p>
+
+
+
+<pre class="wp-block-preformatted">bash
+Copy
+<code>TOKEN=&lt;paste JWT here&gt;</code>
+<code>curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/isUserValid</code></pre>
+
+
+
+<h3 class="wp-block-heading">Integration with Testing Frameworks</h3>
+
+
+
+<p><strong>Example with REST Assured</strong>:</p>
+
+
+
+<pre class="wp-block-preformatted">java
+Copy
+<code>@Test</code>
+<code>public void testSecuredEndpoint() {</code>
+<code>    </code><code>// Get token from Sandcastle Auth</code>
+<code>    </code><code>String token = RestAssured.given()</code>
+<code>        </code><code>.contentType("application/json")</code>
+<code>        </code><code>.body("{\"username\":\"testuser\",\"password\":\"password123\",\"domain\":\"test-domain\"}")</code>
+<code>        </code><code>.when()</code>
+<code>        </code><code>.post("http://localhost:18081/authenticate")</code>
+<code>        </code><code>.then()</code>
+<code>        </code><code>.extract()</code>
+<code>        </code><code>.path("token");</code>
+<code>    </code>
+<code>    </code><code>// Use token to access secured endpoint</code>
+<code>    </code><code>RestAssured.given()</code>
+<code>        </code><code>.header("Authorization", "Bearer " + token)</code>
+<code>        </code><code>.when()</code>
+<code>        </code><code>.get("/api/secured-resource")</code>
+<code>        </code><code>.then()</code>
+<code>        </code><code>.statusCode(200);</code>
+<code>}</code></pre>
+
+
+
+<h3 class="wp-block-heading">Testing in Containerized Environments</h3>
+
+
+
+<p>Sandcastle Auth can be deployed as a container alongside your application services:</p>
+
+
+
+<pre class="wp-block-preformatted">yaml
+Copy
+<code># Docker Compose example</code>
+<code>services:</code>
+<code>  </code><code>auth-service:</code>
+<code>    </code><code>image: sandcastle-auth:latest</code>
+<code>    </code><code>ports:</code>
+<code>      </code><code>- "18081:8080"</code>
+<code>    </code><code>volumes:</code>
+<code>      </code><code>- ./config:/app/config</code>
+<code>    </code>
+<code>  </code><code>app-service:</code>
+<code>    </code><code>image: your-application:latest</code>
+<code>    </code><code>environment:</code>
+<code>      </code><code>- AUTH_SERVICE_URL=http://auth-service:8080</code>
+<code>    </code><code>depends_on:</code>
+<code>      </code><code>- auth-service</code></pre>
+
+
+
+<h2 class="wp-block-heading">Educational Use of Sandcastle Auth</h2>
+
+
+
+<h3 class="wp-block-heading">Learning Path</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Basic JWT Flow</strong>
+<ul class="wp-block-list">
+<li>Understand token issuance and validation</li>
+
+
+
+<li>Explore the structure of JWT tokens</li>
+
+
+
+<li>Learn about token-based authentication principles</li>
+</ul>
+</li>
+
+
+
+<li><strong>Token Inspection</strong>
+<ul class="wp-block-list">
+<li>Decode and inspect JWT contents</li>
+
+
+
+<li>Understand the purpose of different claims</li>
+
+
+
+<li>Learn about token security features</li>
+</ul>
+</li>
+
+
+
+<li><strong>Token Validation</strong>
+<ul class="wp-block-list">
+<li>Explore the validation process</li>
+
+
+
+<li>Understand security implications of proper validation</li>
+
+
+
+<li>Learn about common validation pitfalls</li>
+</ul>
+</li>
+
+
+
+<li><strong>Authorization Models</strong>
+<ul class="wp-block-list">
+<li>Learn how claims can be used for authorization</li>
+
+
+
+<li>Understand role-based access control</li>
+
+
+
+<li>Explore domain-based segregation</li>
+</ul>
+</li>
+
+
+
+<li><strong>Token Lifecycle Management</strong>
+<ul class="wp-block-list">
+<li>Learn about token expiration</li>
+
+
+
+<li>Understand token renewal strategies</li>
+
+
+
+<li>Explore token revocation mechanisms</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Educational Features</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Transparent Implementation</strong>
+<ul class="wp-block-list">
+<li>Clear, readable code that explains JWT concepts</li>
+
+
+
+<li>Well-documented classes and methods</li>
+
+
+
+<li>Simple architecture that's easy to understand</li>
+</ul>
+</li>
+
+
+
+<li><strong>Extensive Logging</strong>
+<ul class="wp-block-list">
+<li>Detailed logs that explain each step of the authentication process</li>
+
+
+
+<li>Clear error messages that indicate what went wrong</li>
+
+
+
+<li>Information about token creation, validation, and usage</li>
+</ul>
+</li>
+
+
+
+<li><strong>Debuggable Design</strong>
+<ul class="wp-block-list">
+<li>Run in debug mode to step through the authentication flow</li>
+
+
+
+<li>Set breakpoints to examine token creation and validation</li>
+
+
+
+<li>Inspect data structures at each step</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Educational Resources</h3>
+
+
+
+<p>(Links to relevant articles, courses, or documentation about JWT concepts)</p>
+
+
+
+<h2 class="wp-block-heading">Technical Design Decisions</h2>
+
+
+
+<p>Sandcastle Auth deliberately makes certain design choices that prioritize learning and testing over production readiness. These decisions create an ideal environment for education and testing but would need to be reconsidered for production use.</p>
+
+
+
+<h3 class="wp-block-heading">Authentication Mechanisms</h3>
+
+
+
+<p><strong>Symmetric Key Encryption (HS512)</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Simple to set up and inspect; allows easy token validation using tools like jwt.io</li>
+
+
+
+<li><strong>Production Concern</strong>: Requires the same secret to be shared between authentication and resource servers, creating a single point of compromise</li>
+
+
+
+<li><strong>Better Practice</strong>: Use asymmetric keys (RS256, ES256) where auth servers sign with private keys and resource servers verify with public keys</li>
+</ul>
+
+
+
+<p><strong>PIN-Based Password Augmentation</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Avoids hardcoded passwords while still providing a simple, predictable pattern</li>
+
+
+
+<li><strong>Production Concern</strong>: Predictable pattern makes it vulnerable to attack; same PIN is even allowed shared across a domain, or fixed in the initial config file.</li>
+
+
+
+<li><strong>Better Practice</strong>: Use strong, unique passwords with proper hashing (bcrypt, Argon2) and salting</li>
+</ul>
+
+
+
+<p><strong>Visible Credentials</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: PINs are logged or visible in debug mode to help understand authentication flow</li>
+
+
+
+<li><strong>Production Concern</strong>: Credentials should never be logged or visible in any environment</li>
+
+
+
+<li><strong>Better Practice</strong>: Log only authentication attempts and results, never the credentials themselves</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Token Management</h3>
+
+
+
+<p><strong>Simple Token Structure</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Straightforward claims make token content easy to understand</li>
+
+
+
+<li><strong>Production Concern</strong>: May lack necessary security claims (nbf, jti) and audience validation</li>
+
+
+
+<li><strong>Better Practice</strong>: Include comprehensive claims and validation checks</li>
+</ul>
+
+
+
+<p><strong>File-Based Secret Storage</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Easy to inspect and modify for learning purposes</li>
+
+
+
+<li><strong>Production Concern</strong>: Insecure storage of sensitive cryptographic material</li>
+
+
+
+<li><strong>Better Practice</strong>: Use secure key vaults, HSMs, or secret management services</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">System Design</h3>
+
+
+
+<p><strong>Simplified Architecture</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Single-component design makes it easy to follow authentication flow</li>
+
+
+
+<li><strong>Production Concern</strong>: Lacks separation of concerns and proper security boundaries</li>
+
+
+
+<li><strong>Better Practice</strong>: Implement proper separation between authentication, authorization, and resource servers</li>
+</ul>
+
+
+
+<p><strong>In-Memory Storage</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Simplifies setup and makes state changes visible</li>
+
+
+
+<li><strong>Production Concern</strong>: No persistence, poor scaling, vulnerable to memory attacks</li>
+
+
+
+<li><strong>Better Practice</strong>: Use secure, dedicated databases with proper data protection</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">How Sandcastle Auth Fills a Gap</h2>
+
+
+
+<p>Sandcastle Auth addresses a gap in the ecosystem of authentication tools:</p>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Full-featured authentication servers</strong> (like Keycloak, Auth0) are:
+<ul class="wp-block-list">
+<li>Comprehensive but complex to set up</li>
+
+
+
+<li>Rich in features but lacking in transparency</li>
+
+
+
+<li>Optimized for security rather than learning</li>
+</ul>
+</li>
+
+
+
+<li><strong>Simple JWT libraries</strong> provide:
+<ul class="wp-block-list">
+<li>Basic token operations but little visibility</li>
+
+
+
+<li>No integrated testing capabilities</li>
+
+
+
+<li>Limited educational value</li>
+</ul>
+</li>
+
+
+
+<li><strong>Educational examples</strong> often:
+<ul class="wp-block-list">
+<li>Lack practical testing utility</li>
+
+
+
+<li>Oversimplify important concepts</li>
+
+
+
+<li>Don't integrate with real applications</li>
+</ul>
+</li>
+</ol>
+
+
+
+<p>Sandcastle Auth bridges these gaps by providing a tool that is:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Lightweight enough for testing</li>
+
+
+
+<li>Transparent enough for learning</li>
+
+
+
+<li>Practical enough for real debugging scenarios</li>
+
+
+
+<li>Flexible enough for various authentication needs</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Limitations &amp; Disclaimers</h2>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Not Production-Ready</strong>:
+<ul class="wp-block-list">
+<li>Minimal validation and security checks</li>
+
+
+
+<li>No robust scaling or high availability features</li>
+
+
+
+<li>Simplified security model for clarity</li>
+</ul>
+</li>
+
+
+
+<li><strong>No Hierarchical Roles</strong>:
+<ul class="wp-block-list">
+<li>Roles are simple flags; no nested structures</li>
+</ul>
+</li>
+
+
+
+<li><strong>Limited Security Controls</strong>:
+<ul class="wp-block-list">
+<li>Minimal protection against brute force attacks</li>
+
+
+
+<li>Basic validation rules focused on education</li>
+
+
+
+<li>Limited token security features</li>
+</ul>
+</li>
+</ul>
+
+
+
+<p>For production systems, consider established authentication services like Keycloak, Auth0, or Okta, which have addressed these concerns through years of security-focused development.</p>
+
+
+
+<h2 class="wp-block-heading">FAQ</h2>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Q: Can I integrate this with my production system?</strong><br>A: It's only meant for demos and testing, please do not rely on it for production security. Even the name is a clue, a sandcastle isn’t a fortress.</li>
+
+
+
+<li><strong>Q: Where is the user data stored?</strong><br>A: By default, in an H2 in-memory DB. You can switch to other DB engines with standard Spring configurations.</li>
+
+
+
+<li><strong>Q: How do I add more roles/domains/users?</strong><br>A: Configure them in application.yml or application.properties, or via an external config file. The server initializes them at startup and they can then be temporaraly modified by the spring rest API.</li>
+
+
+
+<li><strong>Q: Why am I getting a 401 with my token?</strong><br>A: Check if the token is expired, or if you used the correct Bearer scheme in the Authorization header.</li>
+</ol>
+
+
+
+<h2 class="wp-block-heading">Contributing</h2>
+
+
+
+<p>Contributions that enhance the educational value and testing capabilities of Sandcastle Auth are welcome. Please consider:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Adding clear comments that explain the "why" behind implementation choices</li>
+
+
+
+<li>Enhancing logging to make the authentication flow more visible</li>
+
+
+
+<li>Creating additional examples that demonstrate specific JWT concepts</li>
+
+
+
+<li>Expanding documentation with learning resources</li>
+
+
+
+<li>Adding new testing utilities and scenarios</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Sandcastle Auth</h2>
+
+
+
+<h2 class="wp-block-heading">Introduction</h2>
+
+
+
+<p>Sandcastle Auth is an authentication server designed for testing, debugging, and educational purposes. It provides a Spring Boot-based JWT authentication solution that allows developers to experiment with, learn about, and test authentication flows in a controlled environment. This project is explicitly <strong>not intended for production use</strong> but instead offers a transparent sandbox for understanding JWT concepts and testing authentication implementations.</p>
+
+
+
+<p>The project is dual-licensed under both the Apache License 2.0 and the MIT License, giving users the flexibility to choose whichever license better suits their needs.</p>
+
+
+
+<h2 class="wp-block-heading">Origin and Purpose</h2>
+
+
+
+<p>Sandcastle Auth originated as a practical testing tool to address a specific challenge: debugging authentication issues in complex containerized environments. When working with multiple containers in Kubernetes deployments, tracing authentication flows and diagnosing JWT-related problems can be particularly difficult.</p>
+
+
+
+<p>During the initial design phase, it became apparent that the same qualities that made it valuable for testing—transparency, configurability, and simplicity—also made it an excellent educational resource. This led to a dual focus on both testing and educational aspects.</p>
+
+
+
+<h3 class="wp-block-heading">Primary Use Cases</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Testing Authentication Flows</strong>
+<ul class="wp-block-list">
+<li>Integration testing of microservices with JWT authentication</li>
+
+
+
+<li>Debugging authentication issues in containerized environments</li>
+
+
+
+<li>Validating token handling in client applications</li>
+
+
+
+<li>Simulating various token states (valid, expired, revoked)</li>
+</ul>
+</li>
+
+
+
+<li><strong>Educational Tool</strong>
+<ul class="wp-block-list">
+<li>Learning JWT concepts and implementation details</li>
+
+
+
+<li>Teaching authentication and authorization principles</li>
+
+
+
+<li>Demonstrating token-based security patterns</li>
+
+
+
+<li>Understanding the security implications of different JWT configurations</li>
+</ul>
+</li>
+
+
+
+<li><strong>System Testing</strong>
+<ul class="wp-block-list">
+<li>Debugging authentication issues in Kubernetes environments</li>
+
+
+
+<li>Validating API security implementations</li>
+
+
+
+<li>Testing client-side token handling</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h2 class="wp-block-heading">Features</h2>
+
+
+
+<h3 class="wp-block-heading">Core Functionality</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Basic username/password authentication</li>
+
+
+
+<li>Domain-based user segregation</li>
+
+
+
+<li>Simple role-based access control</li>
+
+
+
+<li>JWT token generation &amp; validation</li>
+
+
+
+<li>H2 in-memory database support (for quick demos)</li>
+
+
+
+<li>Extensive logging for visibility into authentication flows</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Testing-Focused Features</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Lightweight service that can be deployed alongside application containers</li>
+
+
+
+<li>Configurable token properties for testing different scenarios</li>
+
+
+
+<li>Simple API for token issuance and validation</li>
+
+
+
+<li>Easy integration with testing frameworks</li>
+
+
+
+<li>Support for test automation in CI/CD pipelines</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Educational Features</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Transparent JWT creation and validation</li>
+
+
+
+<li>Detailed logging of each authentication step</li>
+
+
+
+<li>Clear code structure prioritizing readability</li>
+
+
+
+<li>Simplified model for understanding token-based authentication</li>
+
+
+
+<li>Well-documented design decisions and trade-offs</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Planned Enhancements</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Configurable token expiration for different domains, roles, and users</li>
+
+
+
+<li>Token revocation capabilities at multiple levels (user, role, domain)</li>
+
+
+
+<li>Database flexibility with both local H2 and remote PostgreSQL options</li>
+
+
+
+<li>Role synchronization from central repositories</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Installation</h2>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Clone the Repository</strong>: bash Copy <code>git clone https://github.com/robdeas/sandcastle-auth.git</code> <code>cd sandcastle-auth</code></li>
+
+
+
+<li><strong>Build the Project</strong>: bash Copy <code>./gradlew build</code></li>
+
+
+
+<li><strong>Check the Config Directory</strong>:
+<ul class="wp-block-list">
+<li><code>config/</code> folder should contain <code>jwt-key.txt</code> (the secret key file)</li>
+
+
+
+<li><code>application.properties</code> or <code>application.yml</code> for basic settings</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h2 class="wp-block-heading">Configuration</h2>
+
+
+
+<h3 class="wp-block-heading">application.properties Highlights</h3>
+
+
+
+<pre class="wp-block-preformatted">properties
+Copy
+<code># Server port configuration</code>
+<code>server.port=8080</code>
+
+<code># Path to your base64-encoded secret key</code>
+<code>jwt.key.file=config/jwt-key.txt</code>
+
+<code># JWT validity in seconds</code>
+<code>jwt.token.validity=86400  # 1 day</code>
+
+<code># Enable/disable H2 console for database inspection</code>
+<code>spring.h2.console.enabled=true</code></pre>
+
+
+
+<h3 class="wp-block-heading">Domain &amp; Role Configuration</h3>
+
+
+
+<pre class="wp-block-preformatted">yaml
+Copy
+<code>security:</code>
+<code>  </code><code>domains:</code>
+<code>    </code><code>- name: "example.com"</code>
+<code>      </code><code>displayName: "Example Domain"</code>
+<code>  </code><code>roles:</code>
+<code>    </code><code>- name: "ADMIN"</code>
+<code>      </code><code>domain: "example.com"</code>
+<code>    </code><code>- name: "USER"</code>
+<code>      </code><code>domain: "example.com"</code>
+<code>  </code><code>users:</code>
+<code>    </code><code>- username: "testuser"</code>
+<code>      </code><code>password: "testpass"</code>
+<code>      </code><code>domain: "example.com"</code>
+<code>      </code><code>roles: ["USER"]</code></pre>
+
+
+
+<h2 class="wp-block-heading">Running the Server</h2>
+
+
+
+<pre class="wp-block-preformatted">bash
+Copy
+<code>java -jar build/libs/sandcastle-auth-1.0.0.jar</code></pre>
+
+
+
+<h3 class="wp-block-heading">Verifying Start-Up</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Logs should show messages about domain creation, user creation, role assignment, etc.</li>
+
+
+
+<li>If H2 console is enabled, you can access it at <code>http://localhost:8080/h2-console</code>
+<ul class="wp-block-list">
+<li>Default JDBC URL: <code>jdbc:h2:mem:testdb</code></li>
+</ul>
+</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">API Endpoints</h2>
+
+
+
+<h3 class="wp-block-heading">Authentication</h3>
+
+
+
+<p><strong>POST /authenticate</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li>Purpose: Validates user credentials, issues a JWT token</li>
+
+
+
+<li>Request Body: json Copy <code>{</code> <code>"username": "testuser",</code> <code>"password": "testpass",</code> <code>"domain": "example.com"</code> <code>}</code></li>
+
+
+
+<li>Success Response (200 OK): json Copy <code>{</code> <code>"token": "eyJhbGciOi..."</code> <code>}</code></li>
+
+
+
+<li>Error Response: 401 Unauthorized if credentials fail</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Validation</h3>
+
+
+
+<p><strong>GET /api/isUserValid</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li>Purpose: Checks if the current user's JWT is valid</li>
+
+
+
+<li>Headers: <code>Authorization: Bearer &lt;jwt-token></code></li>
+
+
+
+<li>Success Response: json Copy <code>{</code> <code>"isValid": true,</code> <code>"username": "testuser",</code> <code>"message": "User is authenticated and valid.",</code> <code>"version": "1",</code> <code>"usernameFromToken": "testuser",</code> <code>"domain": "example.com",</code> <code>"role1": "ADMIN"</code> <code>}</code></li>
+</ul>
+
+
+
+<p><strong>GET /api/isLocalAdmin</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li>Purpose: Tests if the user is a local authentication domain admin</li>
+
+
+
+<li>Headers: <code>Authorization: Bearer &lt;jwt-token></code></li>
+
+
+
+<li>Responses:
+<ul class="wp-block-list">
+<li>200 OK if user is an admin in the specified domain</li>
+
+
+
+<li>403 Forbidden or 401 Unauthorized otherwise</li>
+</ul>
+</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Additional Endpoints</h3>
+
+
+
+<p>Depending on your configuration, you might also have:</p>
+
+
+
+<ul class="wp-block-list">
+<li><code>/api/admin/**</code> for admin-only routes</li>
+
+
+
+<li><code>/api/rest/users/**</code>, <code>/api/rest/roles/**</code>, and so on</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Using Sandcastle Auth for Testing</h2>
+
+
+
+<h3 class="wp-block-heading">Testing Scenarios</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Authentication Flow Testing</strong>
+<ul class="wp-block-list">
+<li>Verify credentials validation</li>
+
+
+
+<li>Test token issuance with different parameters</li>
+
+
+
+<li>Validate error handling for invalid credentials</li>
+</ul>
+</li>
+
+
+
+<li><strong>Token Validation Testing</strong>
+<ul class="wp-block-list">
+<li>Verify that valid tokens are accepted</li>
+
+
+
+<li>Confirm that expired tokens are rejected</li>
+
+
+
+<li>Test handling of tokens with incorrect signatures</li>
+</ul>
+</li>
+
+
+
+<li><strong>Authorization Testing</strong>
+<ul class="wp-block-list">
+<li>Test role-based access control</li>
+
+
+
+<li>Verify domain-based restrictions</li>
+
+
+
+<li>Validate proper handling of insufficient permissions</li>
+</ul>
+</li>
+
+
+
+<li><strong>JWT Lifecycle Testing</strong>
+<ul class="wp-block-list">
+<li>Test token expiration handling</li>
+
+
+
+<li>Verify token renewal processes</li>
+
+
+
+<li>Validate token revocation mechanisms</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Testing with cURL</h3>
+
+
+
+<p><strong>Authenticate and get a token</strong>:</p>
+
+
+
+<pre class="wp-block-preformatted">bash
+Copy
+<code>curl -X POST -H "Content-Type: application/json" \</code>
+<code>  </code><code>-d '{"username":"testuser","password":"testpass","domain":"example.com"}' \</code>
+<code>  </code><code>http://localhost:8080/authenticate</code></pre>
+
+
+
+<p><strong>Use the token</strong>:</p>
+
+
+
+<pre class="wp-block-preformatted">bash
+Copy
+<code>TOKEN=&lt;paste JWT here&gt;</code>
+<code>curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/isUserValid</code></pre>
+
+
+
+<h3 class="wp-block-heading">Integration with Testing Frameworks</h3>
+
+
+
+<p><strong>Example with REST Assured</strong>:</p>
+
+
+
+<pre class="wp-block-preformatted">java
+Copy
+<code>@Test</code>
+<code>public void testSecuredEndpoint() {</code>
+<code>    </code><code>// Get token from Sandcastle Auth</code>
+<code>    </code><code>String token = RestAssured.given()</code>
+<code>        </code><code>.contentType("application/json")</code>
+<code>        </code><code>.body("{\"username\":\"testuser\",\"password\":\"password123\",\"domain\":\"test-domain\"}")</code>
+<code>        </code><code>.when()</code>
+<code>        </code><code>.post("http://localhost:18081/authenticate")</code>
+<code>        </code><code>.then()</code>
+<code>        </code><code>.extract()</code>
+<code>        </code><code>.path("token");</code>
+<code>    </code>
+<code>    </code><code>// Use token to access secured endpoint</code>
+<code>    </code><code>RestAssured.given()</code>
+<code>        </code><code>.header("Authorization", "Bearer " + token)</code>
+<code>        </code><code>.when()</code>
+<code>        </code><code>.get("/api/secured-resource")</code>
+<code>        </code><code>.then()</code>
+<code>        </code><code>.statusCode(200);</code>
+<code>}</code></pre>
+
+
+
+<h3 class="wp-block-heading">Testing in Containerized Environments</h3>
+
+
+
+<p>Sandcastle Auth can be deployed as a container alongside your application services:</p>
+
+
+
+<pre class="wp-block-preformatted">yaml
+Copy
+<code># Docker Compose example</code>
+<code>services:</code>
+<code>  </code><code>auth-service:</code>
+<code>    </code><code>image: sandcastle-auth:latest</code>
+<code>    </code><code>ports:</code>
+<code>      </code><code>- "18081:8080"</code>
+<code>    </code><code>volumes:</code>
+<code>      </code><code>- ./config:/app/config</code>
+<code>    </code>
+<code>  </code><code>app-service:</code>
+<code>    </code><code>image: your-application:latest</code>
+<code>    </code><code>environment:</code>
+<code>      </code><code>- AUTH_SERVICE_URL=http://auth-service:8080</code>
+<code>    </code><code>depends_on:</code>
+<code>      </code><code>- auth-service</code></pre>
+
+
+
+<h2 class="wp-block-heading">Educational Use of Sandcastle Auth</h2>
+
+
+
+<h3 class="wp-block-heading">Learning Path</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Basic JWT Flow</strong>
+<ul class="wp-block-list">
+<li>Understand token issuance and validation</li>
+
+
+
+<li>Explore the structure of JWT tokens</li>
+
+
+
+<li>Learn about token-based authentication principles</li>
+</ul>
+</li>
+
+
+
+<li><strong>Token Inspection</strong>
+<ul class="wp-block-list">
+<li>Decode and inspect JWT contents</li>
+
+
+
+<li>Understand the purpose of different claims</li>
+
+
+
+<li>Learn about token security features</li>
+</ul>
+</li>
+
+
+
+<li><strong>Token Validation</strong>
+<ul class="wp-block-list">
+<li>Explore the validation process</li>
+
+
+
+<li>Understand security implications of proper validation</li>
+
+
+
+<li>Learn about common validation pitfalls</li>
+</ul>
+</li>
+
+
+
+<li><strong>Authorization Models</strong>
+<ul class="wp-block-list">
+<li>Learn how claims can be used for authorization</li>
+
+
+
+<li>Understand role-based access control</li>
+
+
+
+<li>Explore domain-based segregation</li>
+</ul>
+</li>
+
+
+
+<li><strong>Token Lifecycle Management</strong>
+<ul class="wp-block-list">
+<li>Learn about token expiration</li>
+
+
+
+<li>Understand token renewal strategies</li>
+
+
+
+<li>Explore token revocation mechanisms</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Educational Features</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Transparent Implementation</strong>
+<ul class="wp-block-list">
+<li>Clear, readable code that explains JWT concepts</li>
+
+
+
+<li>Well-documented classes and methods</li>
+
+
+
+<li>Simple architecture that's easy to understand</li>
+</ul>
+</li>
+
+
+
+<li><strong>Extensive Logging</strong>
+<ul class="wp-block-list">
+<li>Detailed logs that explain each step of the authentication process</li>
+
+
+
+<li>Clear error messages that indicate what went wrong</li>
+
+
+
+<li>Information about token creation, validation, and usage</li>
+</ul>
+</li>
+
+
+
+<li><strong>Debuggable Design</strong>
+<ul class="wp-block-list">
+<li>Run in debug mode to step through the authentication flow</li>
+
+
+
+<li>Set breakpoints to examine token creation and validation</li>
+
+
+
+<li>Inspect data structures at each step</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Educational Resources</h3>
+
+
+
+<p>(Links to relevant articles, courses, or documentation about JWT concepts)</p>
+
+
+
+<h2 class="wp-block-heading">Technical Design Decisions</h2>
+
+
+
+<p>Sandcastle Auth deliberately makes certain design choices that prioritize learning and testing over production readiness. These decisions create an ideal environment for education and testing but would need to be reconsidered for production use.</p>
+
+
+
+<h3 class="wp-block-heading">Authentication Mechanisms</h3>
+
+
+
+<p><strong>Symmetric Key Encryption (HS512)</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Simple to set up and inspect; allows easy token validation using tools like jwt.io</li>
+
+
+
+<li><strong>Production Concern</strong>: Requires the same secret to be shared between authentication and resource servers, creating a single point of compromise</li>
+
+
+
+<li><strong>Better Practice</strong>: Use asymmetric keys (RS256, ES256) where auth servers sign with private keys and resource servers verify with public keys</li>
+</ul>
+
+
+
+<p><strong>PIN-Based Password Augmentation</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Avoids hardcoded passwords while still providing a simple, predictable pattern</li>
+
+
+
+<li><strong>Production Concern</strong>: Predictable pattern makes it vulnerable to attack; same PIN is even allowed shared across a domain, or fixed in the initial config file.</li>
+
+
+
+<li><strong>Better Practice</strong>: Use strong, unique passwords with proper hashing (bcrypt, Argon2) and salting</li>
+</ul>
+
+
+
+<p><strong>Visible Credentials</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: PINs are logged or visible in debug mode to help understand authentication flow</li>
+
+
+
+<li><strong>Production Concern</strong>: Credentials should never be logged or visible in any environment</li>
+
+
+
+<li><strong>Better Practice</strong>: Log only authentication attempts and results, never the credentials themselves</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Token Management</h3>
+
+
+
+<p><strong>Simple Token Structure</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Straightforward claims make token content easy to understand</li>
+
+
+
+<li><strong>Production Concern</strong>: May lack necessary security claims (nbf, jti) and audience validation</li>
+
+
+
+<li><strong>Better Practice</strong>: Include comprehensive claims and validation checks</li>
+</ul>
+
+
+
+<p><strong>File-Based Secret Storage</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Easy to inspect and modify for learning purposes</li>
+
+
+
+<li><strong>Production Concern</strong>: Insecure storage of sensitive cryptographic material</li>
+
+
+
+<li><strong>Better Practice</strong>: Use secure key vaults, HSMs, or secret management services</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">System Design</h3>
+
+
+
+<p><strong>Simplified Architecture</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Single-component design makes it easy to follow authentication flow</li>
+
+
+
+<li><strong>Production Concern</strong>: Lacks separation of concerns and proper security boundaries</li>
+
+
+
+<li><strong>Better Practice</strong>: Implement proper separation between authentication, authorization, and resource servers</li>
+</ul>
+
+
+
+<p><strong>In-Memory Storage</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Simplifies setup and makes state changes visible</li>
+
+
+
+<li><strong>Production Concern</strong>: No persistence, poor scaling, vulnerable to memory attacks</li>
+
+
+
+<li><strong>Better Practice</strong>: Use secure, dedicated databases with proper data protection</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">How Sandcastle Auth Fills a Gap</h2>
+
+
+
+<p>Sandcastle Auth addresses a gap in the ecosystem of authentication tools:</p>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Full-featured authentication servers</strong> (like Keycloak, Auth0) are:
+<ul class="wp-block-list">
+<li>Comprehensive but complex to set up</li>
+
+
+
+<li>Rich in features but lacking in transparency</li>
+
+
+
+<li>Optimized for security rather than learning</li>
+</ul>
+</li>
+
+
+
+<li><strong>Simple JWT libraries</strong> provide:
+<ul class="wp-block-list">
+<li>Basic token operations but little visibility</li>
+
+
+
+<li>No integrated testing capabilities</li>
+
+
+
+<li>Limited educational value</li>
+</ul>
+</li>
+
+
+
+<li><strong>Educational examples</strong> often:
+<ul class="wp-block-list">
+<li>Lack practical testing utility</li>
+
+
+
+<li>Oversimplify important concepts</li>
+
+
+
+<li>Don't integrate with real applications</li>
+</ul>
+</li>
+</ol>
+
+
+
+<p>Sandcastle Auth bridges these gaps by providing a tool that is:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Lightweight enough for testing</li>
+
+
+
+<li>Transparent enough for learning</li>
+
+
+
+<li>Practical enough for real debugging scenarios</li>
+
+
+
+<li>Flexible enough for various authentication needs</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Limitations &amp; Disclaimers</h2>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Not Production-Ready</strong>:
+<ul class="wp-block-list">
+<li>Minimal validation and security checks</li>
+
+
+
+<li>No robust scaling or high availability features</li>
+
+
+
+<li>Simplified security model for clarity</li>
+</ul>
+</li>
+
+
+
+<li><strong>No Hierarchical Roles</strong>:
+<ul class="wp-block-list">
+<li>Roles are simple flags; no nested structures</li>
+</ul>
+</li>
+
+
+
+<li><strong>Limited Security Controls</strong>:
+<ul class="wp-block-list">
+<li>Minimal protection against brute force attacks</li>
+
+
+
+<li>Basic validation rules focused on education</li>
+
+
+
+<li>Limited token security features</li>
+</ul>
+</li>
+</ul>
+
+
+
+<p>For production systems, consider established authentication services like Keycloak, Auth0, or Okta, which have addressed these concerns through years of security-focused development.</p>
+
+
+
+<h2 class="wp-block-heading">FAQ</h2>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Q: Can I integrate this with my production system?</strong><br>A: It's only meant for demos and testing, please do not rely on it for production security. Even the name is a clue, a sandcastle isn’t a fortress.</li>
+
+
+
+<li><strong>Q: Where is the user data stored?</strong><br>A: By default, in an H2 in-memory DB. You can switch to other DB engines with standard Spring configurations.</li>
+
+
+
+<li><strong>Q: How do I add more roles/domains/users?</strong><br>A: Configure them in application.yml or application.properties, or via an external config file. The server initializes them at startup and they can then be temporaraly modified by the spring rest API.</li>
+
+
+
+<li><strong>Q: Why am I getting a 401 with my token?</strong><br>A: Check if the token is expired, or if you used the correct Bearer scheme in the Authorization header.</li>
+</ol>
+
+
+
+<h2 class="wp-block-heading">Contributing</h2>
+
+
+
+<p>Contributions that enhance the educational value and testing capabilities of Sandcastle Auth are welcome. Please consider:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Adding clear comments that explain the "why" behind implementation choices</li>
+
+
+
+<li>Enhancing logging to make the authentication flow more visible</li>
+
+
+
+<li>Creating additional examples that demonstrate specific JWT concepts</li>
+
+
+
+<li>Expanding documentation with learning resources</li>
+
+
+
+<li>Adding new testing utilities and scenarios</li>
+</ul>
+
+
+
+<p>Sandcastle Auth</p>
+
+
+
+<h2 class="wp-block-heading">Introduction</h2>
+
+
+
+<p>Sandcastle Auth is an authentication server designed for testing, debugging, and educational purposes. It provides a Spring Boot-based JWT authentication solution that allows developers to experiment with, learn about, and test authentication flows in a controlled environment. This project is explicitly <strong>not intended for production use</strong> but instead offers a transparent sandbox for understanding JWT concepts and testing authentication implementations.</p>
+
+
+
+<p>The project is dual-licensed under both the Apache License 2.0 and the MIT License, giving users the flexibility to choose whichever license better suits their needs.</p>
+
+
+
+<h2 class="wp-block-heading">Origin and Purpose</h2>
+
+
+
+<p>Sandcastle Auth originated as a practical testing tool to address a specific challenge: debugging authentication issues in complex containerized environments. When working with multiple containers in Kubernetes deployments, tracing authentication flows and diagnosing JWT-related problems can be particularly difficult.</p>
+
+
+
+<p>During the initial design phase, it became apparent that the same qualities that made it valuable for testing—transparency, configurability, and simplicity—also made it an excellent educational resource. This led to a dual focus on both testing and educational aspects.</p>
+
+
+
+<h3 class="wp-block-heading">Primary Use Cases</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Testing Authentication Flows</strong>
+<ul class="wp-block-list">
+<li>Integration testing of microservices with JWT authentication</li>
+
+
+
+<li>Debugging authentication issues in containerized environments</li>
+
+
+
+<li>Validating token handling in client applications</li>
+
+
+
+<li>Simulating various token states (valid, expired, revoked)</li>
+</ul>
+</li>
+
+
+
+<li><strong>Educational Tool</strong>
+<ul class="wp-block-list">
+<li>Learning JWT concepts and implementation details</li>
+
+
+
+<li>Teaching authentication and authorization principles</li>
+
+
+
+<li>Demonstrating token-based security patterns</li>
+
+
+
+<li>Understanding the security implications of different JWT configurations</li>
+</ul>
+</li>
+
+
+
+<li><strong>System Testing</strong>
+<ul class="wp-block-list">
+<li>Debugging authentication issues in Kubernetes environments</li>
+
+
+
+<li>Validating API security implementations</li>
+
+
+
+<li>Testing client-side token handling</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h2 class="wp-block-heading">Features</h2>
+
+
+
+<h3 class="wp-block-heading">Core Functionality</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Basic username/password authentication</li>
+
+
+
+<li>Domain-based user segregation</li>
+
+
+
+<li>Simple role-based access control</li>
+
+
+
+<li>JWT token generation &amp; validation</li>
+
+
+
+<li>H2 in-memory database support (for quick demos)</li>
+
+
+
+<li>Extensive logging for visibility into authentication flows</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Testing-Focused Features</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Lightweight service that can be deployed alongside application containers</li>
+
+
+
+<li>Configurable token properties for testing different scenarios</li>
+
+
+
+<li>Simple API for token issuance and validation</li>
+
+
+
+<li>Easy integration with testing frameworks</li>
+
+
+
+<li>Support for test automation in CI/CD pipelines</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Educational Features</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Transparent JWT creation and validation</li>
+
+
+
+<li>Detailed logging of each authentication step</li>
+
+
+
+<li>Clear code structure prioritizing readability</li>
+
+
+
+<li>Simplified model for understanding token-based authentication</li>
+
+
+
+<li>Well-documented design decisions and trade-offs</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Planned Enhancements</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Configurable token expiration for different domains, roles, and users</li>
+
+
+
+<li>Token revocation capabilities at multiple levels (user, role, domain)</li>
+
+
+
+<li>Database flexibility with both local H2 and remote PostgreSQL options</li>
+
+
+
+<li>Role synchronization from central repositories</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Installation</h2>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Clone the Repository</strong>: bash Copy <code>git clone https://github.com/robdeas/sandcastle-auth.git</code> <code>cd sandcastle-auth</code></li>
+
+
+
+<li><strong>Build the Project</strong>: bash Copy <code>./gradlew build</code></li>
+
+
+
+<li><strong>Check the Config Directory</strong>:
+<ul class="wp-block-list">
+<li><code>config/</code> folder should contain <code>jwt-key.txt</code> (the secret key file)</li>
+
+
+
+<li><code>application.properties</code> or <code>application.yml</code> for basic settings</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h2 class="wp-block-heading">Configuration</h2>
+
+
+
+<h3 class="wp-block-heading">application.properties Highlights</h3>
+
+
+
+<pre class="wp-block-preformatted">properties
+Copy
+<code># Server port configuration</code>
+<code>server.port=8080</code>
+
+<code># Path to your base64-encoded secret key</code>
+<code>jwt.key.file=config/jwt-key.txt</code>
+
+<code># JWT validity in seconds</code>
+<code>jwt.token.validity=86400  # 1 day</code>
+
+<code># Enable/disable H2 console for database inspection</code>
+<code>spring.h2.console.enabled=true</code></pre>
+
+
+
+<h3 class="wp-block-heading">Domain &amp; Role Configuration</h3>
+
+
+
+<pre class="wp-block-preformatted">yaml
+Copy
+<code>security:</code>
+<code>  </code><code>domains:</code>
+<code>    </code><code>- name: "example.com"</code>
+<code>      </code><code>displayName: "Example Domain"</code>
+<code>  </code><code>roles:</code>
+<code>    </code><code>- name: "ADMIN"</code>
+<code>      </code><code>domain: "example.com"</code>
+<code>    </code><code>- name: "USER"</code>
+<code>      </code><code>domain: "example.com"</code>
+<code>  </code><code>users:</code>
+<code>    </code><code>- username: "testuser"</code>
+<code>      </code><code>password: "testpass"</code>
+<code>      </code><code>domain: "example.com"</code>
+<code>      </code><code>roles: ["USER"]</code></pre>
+
+
+
+<h2 class="wp-block-heading">Running the Server</h2>
+
+
+
+<pre class="wp-block-preformatted">bash
+Copy
+<code>java -jar build/libs/sandcastle-auth-1.0.0.jar</code></pre>
+
+
+
+<h3 class="wp-block-heading">Verifying Start-Up</h3>
+
+
+
+<ul class="wp-block-list">
+<li>Logs should show messages about domain creation, user creation, role assignment, etc.</li>
+
+
+
+<li>If H2 console is enabled, you can access it at <code>http://localhost:8080/h2-console</code>
+<ul class="wp-block-list">
+<li>Default JDBC URL: <code>jdbc:h2:mem:testdb</code></li>
+</ul>
+</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">API Endpoints</h2>
+
+
+
+<h3 class="wp-block-heading">Authentication</h3>
+
+
+
+<p><strong>POST /authenticate</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li>Purpose: Validates user credentials, issues a JWT token</li>
+
+
+
+<li>Request Body: json Copy <code>{</code> <code>"username": "testuser",</code> <code>"password": "testpass",</code> <code>"domain": "example.com"</code> <code>}</code></li>
+
+
+
+<li>Success Response (200 OK): json Copy <code>{</code> <code>"token": "eyJhbGciOi..."</code> <code>}</code></li>
+
+
+
+<li>Error Response: 401 Unauthorized if credentials fail</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Validation</h3>
+
+
+
+<p><strong>GET /api/isUserValid</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li>Purpose: Checks if the current user's JWT is valid</li>
+
+
+
+<li>Headers: <code>Authorization: Bearer &lt;jwt-token></code></li>
+
+
+
+<li>Success Response: json Copy <code>{</code> <code>"isValid": true,</code> <code>"username": "testuser",</code> <code>"message": "User is authenticated and valid.",</code> <code>"version": "1",</code> <code>"usernameFromToken": "testuser",</code> <code>"domain": "example.com",</code> <code>"role1": "ADMIN"</code> <code>}</code></li>
+</ul>
+
+
+
+<p><strong>GET /api/isLocalAdmin</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li>Purpose: Tests if the user is a local authentication domain admin</li>
+
+
+
+<li>Headers: <code>Authorization: Bearer &lt;jwt-token></code></li>
+
+
+
+<li>Responses:
+<ul class="wp-block-list">
+<li>200 OK if user is an admin in the specified domain</li>
+
+
+
+<li>403 Forbidden or 401 Unauthorized otherwise</li>
+</ul>
+</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Additional Endpoints</h3>
+
+
+
+<p>Depending on your configuration, you might also have:</p>
+
+
+
+<ul class="wp-block-list">
+<li><code>/api/admin/**</code> for admin-only routes</li>
+
+
+
+<li><code>/api/rest/users/**</code>, <code>/api/rest/roles/**</code>, and so on</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Using Sandcastle Auth for Testing</h2>
+
+
+
+<h3 class="wp-block-heading">Testing Scenarios</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Authentication Flow Testing</strong>
+<ul class="wp-block-list">
+<li>Verify credentials validation</li>
+
+
+
+<li>Test token issuance with different parameters</li>
+
+
+
+<li>Validate error handling for invalid credentials</li>
+</ul>
+</li>
+
+
+
+<li><strong>Token Validation Testing</strong>
+<ul class="wp-block-list">
+<li>Verify that valid tokens are accepted</li>
+
+
+
+<li>Confirm that expired tokens are rejected</li>
+
+
+
+<li>Test handling of tokens with incorrect signatures</li>
+</ul>
+</li>
+
+
+
+<li><strong>Authorization Testing</strong>
+<ul class="wp-block-list">
+<li>Test role-based access control</li>
+
+
+
+<li>Verify domain-based restrictions</li>
+
+
+
+<li>Validate proper handling of insufficient permissions</li>
+</ul>
+</li>
+
+
+
+<li><strong>JWT Lifecycle Testing</strong>
+<ul class="wp-block-list">
+<li>Test token expiration handling</li>
+
+
+
+<li>Verify token renewal processes</li>
+
+
+
+<li>Validate token revocation mechanisms</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Testing with cURL</h3>
+
+
+
+<p><strong>Authenticate and get a token</strong>:</p>
+
+
+
+<pre class="wp-block-preformatted">bash
+Copy
+<code>curl -X POST -H "Content-Type: application/json" \</code>
+<code>  </code><code>-d '{"username":"testuser","password":"testpass","domain":"example.com"}' \</code>
+<code>  </code><code>http://localhost:8080/authenticate</code></pre>
+
+
+
+<p><strong>Use the token</strong>:</p>
+
+
+
+<pre class="wp-block-preformatted">bash
+Copy
+<code>TOKEN=&lt;paste JWT here&gt;</code>
+<code>curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/isUserValid</code></pre>
+
+
+
+<h3 class="wp-block-heading">Integration with Testing Frameworks</h3>
+
+
+
+<p><strong>Example with REST Assured</strong>:</p>
+
+
+
+<pre class="wp-block-preformatted">java
+Copy
+<code>@Test</code>
+<code>public void testSecuredEndpoint() {</code>
+<code>    </code><code>// Get token from Sandcastle Auth</code>
+<code>    </code><code>String token = RestAssured.given()</code>
+<code>        </code><code>.contentType("application/json")</code>
+<code>        </code><code>.body("{\"username\":\"testuser\",\"password\":\"password123\",\"domain\":\"test-domain\"}")</code>
+<code>        </code><code>.when()</code>
+<code>        </code><code>.post("http://localhost:18081/authenticate")</code>
+<code>        </code><code>.then()</code>
+<code>        </code><code>.extract()</code>
+<code>        </code><code>.path("token");</code>
+<code>    </code>
+<code>    </code><code>// Use token to access secured endpoint</code>
+<code>    </code><code>RestAssured.given()</code>
+<code>        </code><code>.header("Authorization", "Bearer " + token)</code>
+<code>        </code><code>.when()</code>
+<code>        </code><code>.get("/api/secured-resource")</code>
+<code>        </code><code>.then()</code>
+<code>        </code><code>.statusCode(200);</code>
+<code>}</code></pre>
+
+
+
+<h3 class="wp-block-heading">Testing in Containerized Environments</h3>
+
+
+
+<p>Sandcastle Auth can be deployed as a container alongside your application services:</p>
+
+
+
+<pre class="wp-block-preformatted">yaml
+Copy
+<code># Docker Compose example</code>
+<code>services:</code>
+<code>  </code><code>auth-service:</code>
+<code>    </code><code>image: sandcastle-auth:latest</code>
+<code>    </code><code>ports:</code>
+<code>      </code><code>- "18081:8080"</code>
+<code>    </code><code>volumes:</code>
+<code>      </code><code>- ./config:/app/config</code>
+<code>    </code>
+<code>  </code><code>app-service:</code>
+<code>    </code><code>image: your-application:latest</code>
+<code>    </code><code>environment:</code>
+<code>      </code><code>- AUTH_SERVICE_URL=http://auth-service:8080</code>
+<code>    </code><code>depends_on:</code>
+<code>      </code><code>- auth-service</code></pre>
+
+
+
+<h2 class="wp-block-heading">Educational Use of Sandcastle Auth</h2>
+
+
+
+<h3 class="wp-block-heading">Learning Path</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Basic JWT Flow</strong>
+<ul class="wp-block-list">
+<li>Understand token issuance and validation</li>
+
+
+
+<li>Explore the structure of JWT tokens</li>
+
+
+
+<li>Learn about token-based authentication principles</li>
+</ul>
+</li>
+
+
+
+<li><strong>Token Inspection</strong>
+<ul class="wp-block-list">
+<li>Decode and inspect JWT contents</li>
+
+
+
+<li>Understand the purpose of different claims</li>
+
+
+
+<li>Learn about token security features</li>
+</ul>
+</li>
+
+
+
+<li><strong>Token Validation</strong>
+<ul class="wp-block-list">
+<li>Explore the validation process</li>
+
+
+
+<li>Understand security implications of proper validation</li>
+
+
+
+<li>Learn about common validation pitfalls</li>
+</ul>
+</li>
+
+
+
+<li><strong>Authorization Models</strong>
+<ul class="wp-block-list">
+<li>Learn how claims can be used for authorization</li>
+
+
+
+<li>Understand role-based access control</li>
+
+
+
+<li>Explore domain-based segregation</li>
+</ul>
+</li>
+
+
+
+<li><strong>Token Lifecycle Management</strong>
+<ul class="wp-block-list">
+<li>Learn about token expiration</li>
+
+
+
+<li>Understand token renewal strategies</li>
+
+
+
+<li>Explore token revocation mechanisms</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Educational Features</h3>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Transparent Implementation</strong>
+<ul class="wp-block-list">
+<li>Clear, readable code that explains JWT concepts</li>
+
+
+
+<li>Well-documented classes and methods</li>
+
+
+
+<li>Simple architecture that's easy to understand</li>
+</ul>
+</li>
+
+
+
+<li><strong>Extensive Logging</strong>
+<ul class="wp-block-list">
+<li>Detailed logs that explain each step of the authentication process</li>
+
+
+
+<li>Clear error messages that indicate what went wrong</li>
+
+
+
+<li>Information about token creation, validation, and usage</li>
+</ul>
+</li>
+
+
+
+<li><strong>Debuggable Design</strong>
+<ul class="wp-block-list">
+<li>Run in debug mode to step through the authentication flow</li>
+
+
+
+<li>Set breakpoints to examine token creation and validation</li>
+
+
+
+<li>Inspect data structures at each step</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Educational Resources</h3>
+
+
+
+<p>(Links to relevant articles, courses, or documentation about JWT concepts)</p>
+
+
+
+<h2 class="wp-block-heading">Technical Design Decisions</h2>
+
+
+
+<p>Sandcastle Auth deliberately makes certain design choices that prioritize learning and testing over production readiness. These decisions create an ideal environment for education and testing but would need to be reconsidered for production use.</p>
+
+
+
+<h3 class="wp-block-heading">Authentication Mechanisms</h3>
+
+
+
+<p><strong>Symmetric Key Encryption (HS512)</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Simple to set up and inspect; allows easy token validation using tools like jwt.io</li>
+
+
+
+<li><strong>Production Concern</strong>: Requires the same secret to be shared between authentication and resource servers, creating a single point of compromise</li>
+
+
+
+<li><strong>Better Practice</strong>: Use asymmetric keys (RS256, ES256) where auth servers sign with private keys and resource servers verify with public keys</li>
+</ul>
+
+
+
+<p><strong>PIN-Based Password Augmentation</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Avoids hardcoded passwords while still providing a simple, predictable pattern</li>
+
+
+
+<li><strong>Production Concern</strong>: Predictable pattern makes it vulnerable to attack; same PIN is even allowed shared across a domain, or fixed in the initial config file.</li>
+
+
+
+<li><strong>Better Practice</strong>: Use strong, unique passwords with proper hashing (bcrypt, Argon2) and salting</li>
+</ul>
+
+
+
+<p><strong>Visible Credentials</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: PINs are logged or visible in debug mode to help understand authentication flow</li>
+
+
+
+<li><strong>Production Concern</strong>: Credentials should never be logged or visible in any environment</li>
+
+
+
+<li><strong>Better Practice</strong>: Log only authentication attempts and results, never the credentials themselves</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Token Management</h3>
+
+
+
+<p><strong>Simple Token Structure</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Straightforward claims make token content easy to understand</li>
+
+
+
+<li><strong>Production Concern</strong>: May lack necessary security claims (nbf, jti) and audience validation</li>
+
+
+
+<li><strong>Better Practice</strong>: Include comprehensive claims and validation checks</li>
+</ul>
+
+
+
+<p><strong>File-Based Secret Storage</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Easy to inspect and modify for learning purposes</li>
+
+
+
+<li><strong>Production Concern</strong>: Insecure storage of sensitive cryptographic material</li>
+
+
+
+<li><strong>Better Practice</strong>: Use secure key vaults, HSMs, or secret management services</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">System Design</h3>
+
+
+
+<p><strong>Simplified Architecture</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Single-component design makes it easy to follow authentication flow</li>
+
+
+
+<li><strong>Production Concern</strong>: Lacks separation of concerns and proper security boundaries</li>
+
+
+
+<li><strong>Better Practice</strong>: Implement proper separation between authentication, authorization, and resource servers</li>
+</ul>
+
+
+
+<p><strong>In-Memory Storage</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Value for Testing/Education</strong>: Simplifies setup and makes state changes visible</li>
+
+
+
+<li><strong>Production Concern</strong>: No persistence, poor scaling, vulnerable to memory attacks</li>
+
+
+
+<li><strong>Better Practice</strong>: Use secure, dedicated databases with proper data protection</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">How Sandcastle Auth Fills a Gap</h2>
+
+
+
+<p>Sandcastle Auth addresses a gap in the ecosystem of authentication tools:</p>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Full-featured authentication servers</strong> (like Keycloak, Auth0) are:
+<ul class="wp-block-list">
+<li>Comprehensive but complex to set up</li>
+
+
+
+<li>Rich in features but lacking in transparency</li>
+
+
+
+<li>Optimized for security rather than learning</li>
+</ul>
+</li>
+
+
+
+<li><strong>Simple JWT libraries</strong> provide:
+<ul class="wp-block-list">
+<li>Basic token operations but little visibility</li>
+
+
+
+<li>No integrated testing capabilities</li>
+
+
+
+<li>Limited educational value</li>
+</ul>
+</li>
+
+
+
+<li><strong>Educational examples</strong> often:
+<ul class="wp-block-list">
+<li>Lack practical testing utility</li>
+
+
+
+<li>Oversimplify important concepts</li>
+
+
+
+<li>Don't integrate with real applications</li>
+</ul>
+</li>
+</ol>
+
+
+
+<p>Sandcastle Auth bridges these gaps by providing a tool that is:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Lightweight enough for testing</li>
+
+
+
+<li>Transparent enough for learning</li>
+
+
+
+<li>Practical enough for real debugging scenarios</li>
+
+
+
+<li>Flexible enough for various authentication needs</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Limitations &amp; Disclaimers</h2>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Not Production-Ready</strong>:
+<ul class="wp-block-list">
+<li>Minimal validation and security checks</li>
+
+
+
+<li>No robust scaling or high availability features</li>
+
+
+
+<li>Simplified security model for clarity</li>
+</ul>
+</li>
+
+
+
+<li><strong>No Hierarchical Roles</strong>:
+<ul class="wp-block-list">
+<li>Roles are simple flags; no nested structures</li>
+</ul>
+</li>
+
+
+
+<li><strong>Limited Security Controls</strong>:
+<ul class="wp-block-list">
+<li>Minimal protection against brute force attacks</li>
+
+
+
+<li>Basic validation rules focused on education</li>
+
+
+
+<li>Limited token security features</li>
+</ul>
+</li>
+</ul>
+
+
+
+<p>For production systems, consider established authentication services like Keycloak, Auth0, or Okta, which have addressed these concerns through years of security-focused development.</p>
+
+
+
+<h2 class="wp-block-heading">FAQ</h2>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Q: Can I integrate this with my production system?</strong><br>A: It's only meant for demos and testing, please do not rely on it for production security. Even the name is a clue, a sandcastle isn’t a fortress.</li>
+
+
+
+<li><strong>Q: Where is the user data stored?</strong><br>A: By default, in an H2 in-memory DB. You can switch to other DB engines with standard Spring configurations.</li>
+
+
+
+<li><strong>Q: How do I add more roles/domains/users?</strong><br>A: Configure them in application.yml or application.properties, or via an external config file. The server initializes them at startup and they can then be temporaraly modified by the spring rest API.</li>
+
+
+
+<li><strong>Q: Why am I getting a 401 with my token?</strong><br>A: Check if the token is expired, or if you used the correct Bearer scheme in the Authorization header.</li>
+</ol>
+
+
+
+<h2 class="wp-block-heading">Contributing</h2>
+
+
+
+<p>Contributions that enhance the educational value and testing capabilities of Sandcastle Auth are welcome. Please consider:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Adding clear comments that explain the "why" behind implementation choices</li>
+
+
+
+<li>Enhancing logging to make the authentication flow more visible</li>
+
+
+
+<li>Creating additional examples that demonstrate specific JWT concepts</li>
+
+
+
+<li>Expanding documentation with learning resources</li>
+
+
+
+<li>Adding new testing utilities and scenarios</li>
+</ul>
+
+
+
+<p>See my github for full source <a href="https://github.com/robdeas/sandcastle-auth">https://github.com/robdeas/sandcastle-auth</a></p>
+
+
+
+<h2 class="wp-block-heading">License</h2>
+
+
+
+<p>Sandcastle Auth is dual-licensed under MIT and Apache 2.0 licenses to maximize flexibility for educational and testing use..</p>

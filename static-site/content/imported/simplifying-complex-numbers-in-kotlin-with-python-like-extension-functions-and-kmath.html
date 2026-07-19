@@ -1,0 +1,463 @@
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p>Complex numbers are essential in many fields. However, working with them in Kotlin can sometimes feel cumbersome due to the lack of built-in support for complex numbers. Since I learned complex numbers in Electronic Engineering, I learned to refer to them as <code>j</code>, as Python does. Inspired by Python's simplicity, I created a set of extension functions that make complex number operations in Kotlin more expressive and concise.</p>
+
+
+
+<h3 class="wp-block-heading">The Challenge</h3>
+
+
+
+<p>Many scientific fields rely heavily on complex numbers for modeling, analysis, and computation. For instance, Discrete Fourier transforms (DFTs) are crucial for signal analysis and processing in various applications. Kotlin, with its concise syntax and interoperability with Java, has the potential to be an excellent choice for developers in domains like electrical engineering, quantum mechanics, and signal processing. Its multiplatform capabilities further enhance its appeal. However, despite these strengths, Kotlin lacks built-in support for complex numbers, making it challenging to perform essential tasks like circuit analysis in electrical engineering or implementing DFTs for signal processing.</p>
+
+
+
+<p>Recognizing this gap, I developed a set of Kotlin extension functions to simplify complex number arithmetic, offering a more intuitive syntax that mirrors the simplicity of Python’s <code>1.0 + 1.0j</code>. By using the KMath library and adding these extensions, developers can now benefit from Kotlin's full power while performing complex mathematical computations more easily and concisely.</p>
+
+
+
+<p>While Kotlin provides robust support for numerical types, its doesn't have direct support for complex numbers, which makes complex arithmetic verbose and less readable. Libraries such as KMath that I used for this project offer complex number support, but they still feel less intuitive than Python's syntax. Python’s <code>1.0 + 1.0j</code> is simple and clear, in Kotlin, we need a more natural way to handle complex numbers.</p>
+
+
+
+<h3 class="wp-block-heading"><strong>Why Doesn’t Kotlin Support <code>var c = 1 + 2j</code> Like Python?</strong></h3>
+
+
+
+<p>If you've used Python, you’re probably familiar with its simple, built-in support for complex numbers. Just typing <code>1 + 2j</code> works right out of the box. Naturally, when moving to Kotlin, you might wonder: Why doesn’t Kotlin support <code>var c = 1 + 2j</code> like Python?</p>
+
+
+
+<p>Kotlin does have a focus on clarity but doesn’t include complex numbers natively. However, with a bit of Kotlin’s magic—specifically, extension functions and libraries like KMath—we can get pretty close. In fact, we can create something nearly as elegant, such as <code>1 + 2.j</code> or <code>1 plusJ 2</code>, to work with complex numbers.</p>
+
+
+
+<p>The functions I'll introduce rely on <code>Double</code>s for simplicity and speed, but they could easily be adapted to work with arbitrary precision numbers like <code>BigDecimal</code>. This means you can choose between performance and precision based on your needs.</p>
+
+
+
+<p>In this post, I’ll show you how to achieve this. We'll simplify complex number handling in Kotlin using a Python-like approach, all while giving you the flexibility to switch to higher precision when necessary.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">My Solution: Extension Functions</h3>
+
+
+
+<p>To address this, I developed a set of extension functions that simplify complex number creation and arithmetic. These extensions leverage the KMath library, a powerful Kotlin library for mathematical operations. By adding these extensions, you can:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Create complex numbers effortlessly</strong>:
+<ul class="wp-block-list">
+<li>Use the <code>.j</code> suffix to create complex numbers (e.g., <code>1.0.j</code>, <code>2.j</code>).</li>
+
+
+
+<li>Use the <code>plusJ</code> infix function for a more explicit representation (e.g., <code>1.0 plusJ 2.0</code>).</li>
+</ul>
+</li>
+
+
+
+<li><strong>Perform arithmetic operations seamlessly</strong>:
+<ul class="wp-block-list">
+<li>Add, subtract, multiply, and divide complex numbers using standard operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>).</li>
+
+
+
+<li>Negate complex numbers using the unary minus operator (<code>-</code>).</li>
+
+
+
+<li>Allow a number to be Add, subtract, multiply, and divided with/by a complex number</li>
+</ul>
+</li>
+</ul>
+
+
+
+<p>Although KMath already provides some of these features, my extension functions fill in the gaps, making the syntax more natural.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading"><strong>Examples</strong></h3>
+
+
+
+<pre class="wp-block-code"><code>// <code>Uses space.kscience.kmath.complex.Complex
+
+// Creating complex numbers
+val c1 = 1.0.j          // (0.0 + 1.0j)</code>
+val c2 = 1.0 + 2.0.j     // <code>(1.0 + 2.0j) NOTE: This creates a complex number from 2.0 then does an addition of a Double to a Complex number
+val c3 = 2 plusJ 3      // (2.0 + 3.0j)
+val c4 = -1.0 plusJ -1.0 // (-1.0 - 1.0j)
+
+// Arithmetic operations
+val sum = c1 + c2        // (2.0 + 4.0j)
+val difference = c2 - c1 // (2.0 + 2.0j)
+val product = c1 * c2    // (-3.0 + 2.0j)
+val quotient = c2 / c1   // (-3.0 + 2.0j)
+</code></code></pre>
+
+
+
+<p><strong>Explanation</strong>:</p>
+
+
+
+<ul class="wp-block-list">
+<li><code>1.0.j</code> creates a complex number with a real part of <code>0.0</code> and an imaginary part of <code>1.0</code>.</li>
+
+
+
+<li><code>2 plusJ 3</code> creates a complex number <code>(2.0 + 3.0i)</code>, making it clear which part is real and which is imaginary.</li>
+
+
+
+<li>Arithmetic operations are performed directly, thanks to overloaded operators like <code>+</code>, <code>-</code>, <code>*</code>, and <code>/</code>.</li>
+</ul>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">The <code>.j</code> Extension</h3>
+
+
+
+<p><strong>Purpose</strong>: The <code>.j</code> extension provides a concise way to create complex numbers with only an imaginary component. It mirrors Python's syntax (<code>1.0j</code>) and simplifies complex number initialization in Kotlin.</p>
+
+
+
+<p>Kotlin can't use Python's exact syntax like <code>1.0 + 1.0j</code>: as Kotlin doesn't allow postfix functions on numeric literals like <code>1.0</code>. This is because Kotlin treats literals as complete expressions, and attaching a function to a literal without a separator would create ambiguity in the parser. However, Kotlin allows <code>1.0.j</code>, providing a clean, clear way to represent complex numbers with just the imaginary part.</p>
+
+
+
+<p>Partial <strong>Code for the <code>.j</code> extension</strong>:</p>
+
+
+
+<pre class="wp-block-code"><code><code>val Double?.j: Complex&lt;Double&gt;
+    get() = if (this == null) handleInvalidComplexDoubleInput(reportingNumberType = ReportingNumberType.COMPLEX_DOUBLE)
+    else Complex(0.0, this)
+</code></code></pre>
+
+
+
+<p><strong>Examples</strong>:</p>
+
+
+
+<pre class="wp-block-code"><code><code>val c1 = 1.0.j   // (0.0 + 1.0i)
+val c2 = 2.j     // (0.0 + 2.0i)
+</code>
+Other types are supported.</code></pre>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">The <code>plusJ</code> Infix Function</h3>
+
+
+
+<p><strong>Purpose</strong>: This infix function offers a more explicit way to create complex numbers with both real and imaginary components. It improves code readability and mirrors the mathematical notation for complex number creation.</p>
+
+
+
+<p><strong>Code for the <code>plusJ</code> infix function</strong>:</p>
+
+
+
+<pre class="wp-block-code"><code><code>infix fun Double?.plusJ(imaginary: Double?): Complex&lt;Double&gt; {
+    return Complex(
+        this ?: handleInvalidComplexDoubleInput(reportingNumberType = ReportingNumberType.REAL_DOUBLE).real.value,
+        imaginary ?: handleInvalidComplexDoubleInput(reportingNumberType = ReportingNumberType.IMAGINARY_DOUBLE).imaginary.value
+    )
+}
+</code></code></pre>
+
+
+
+<p><strong>Examples</strong>:</p>
+
+
+
+<pre class="wp-block-code"><code><code>val c3 = 1 plusJ 2      // (1.0 + 2.0i)
+val c4 = -1.0 plusJ -1.0 // (-1.0 - 1.0i)
+</code></code></pre>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">Overloads for <code>+</code> - * and /</h3>
+
+
+
+<p><strong>Purpose</strong>: These operator overloads allow direct arithmetic between real numbers (<code>Double</code>, <code>Int</code>, etc.) and complex numbers, improving code conciseness and readability.</p>
+
+
+
+<p><strong>Code for operator overloads</strong>:</p>
+
+
+
+<pre class="wp-block-preformatted">kotlinCopy code<code>operator fun Double.plus(complex: Complex&lt;Double&gt;): Complex&lt;Double&gt; = this.toComplex() + complex
+operator fun Double.minus(complex: Complex&lt;Double&gt;): Complex&lt;Double&gt; = this.toComplex() - complex
+</code></pre>
+
+
+
+<p><strong>Examples</strong>:</p>
+
+
+
+<pre class="wp-block-code"><code><code>val c5 = 1.0 + 1.0.j  // (1.0 + 1.0i)
+val c6 = 2.0 - 3.0.j  // (2.0 - 3.0i)
+</code></code></pre>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">Benefits</h3>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Readability</strong>: The concise syntax makes the code more readable and closer to the mathematical notation.</li>
+
+
+
+<li><strong>Efficiency</strong>: KMath provides optimized implementations for complex number operations.</li>
+
+
+
+<li><strong>Flexibility</strong>: These extension functions work with various numeric types, including <code>Int</code>, <code>Double</code>, and <code>BigDecimal</code>.</li>
+</ul>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">Kotlin Code:</h3>
+
+
+
+<pre class="wp-block-code"><code>package tech.robd
+
+import space.kscience.kmath.complex.Complex
+import space.kscience.kmath.complex.ComplexField
+import space.kscience.kmath.complex.ComplexField.div
+import space.kscience.kmath.complex.ComplexField.plus
+import space.kscience.kmath.complex.ComplexField.minus
+import space.kscience.kmath.complex.ComplexField.times
+import java.math.BigDecimal
+import java.math.BigInteger
+
+// `.j` extension for creating a Complex number with only an imaginary component.
+val Int?.j: Complex
+    get() = if (this == null) throw IllegalArgumentException("Invalid data for creating an Imaginary Number") else Complex(0.0, this.toDouble())
+
+val Double?.j: Complex
+
+    get() = if (this == null) throw IllegalArgumentException("Invalid data for creating an Imaginary Number") else Complex(0.0, this)
+
+val Long?.j: Complex
+
+    get() = if (this == null) throw IllegalArgumentException("Invalid data for creating an Imaginary Number") else Complex(0.0, this.toDouble())
+
+val Float?.j: Complex
+
+    get() = if (this == null) throw IllegalArgumentException("Invalid data for creating an Imaginary Number") else Complex(0.0, this.toDouble())
+
+val BigInteger?.j: Complex
+    get() = if (this == null) throw IllegalArgumentException("Invalid data for creating an Imaginary Number") else Complex(0.0, this.toDouble())
+
+
+val BigDecimal?.j: Complex
+    get() = if (this == null) throw IllegalArgumentException("Invalid data for creating an Imaginary Number") else Complex(0.0, this.toDouble())
+
+
+// `plusJ` infix functions for creating a Complex number with real and imaginary components.
+infix fun Int?.plusJ(imaginary: Int?): Complex{
+    val real = this?.toDouble() ?: throw IllegalArgumentException("Invalid data for creating an Imaginary Number")
+    val imag = imaginary?.toDouble() ?: throw IllegalArgumentException("Invalid data for creating an Imaginary Number")
+    return Complex(real, imag)
+}
+
+infix fun Double?.plusJ(imaginary: Double?): Complex {
+    return Complex(
+        this ?: throw IllegalArgumentException("Invalid data for creating an Imaginary Number"),
+        imaginary ?: throw IllegalArgumentException("Invalid data for creating an Imaginary Number")
+    )
+}
+
+infix fun Long?.plusJ(imaginary: Long?): Complex{
+    return Complex(
+        this ?: throw IllegalArgumentException("Invalid data for creating an Imaginary Number"),
+        imaginary ?: throw IllegalArgumentException("Invalid data for creating an Imaginary Number")
+    )
+}
+
+infix fun Float?.plusJ(imaginary: Float?): Complex{
+    return Complex(
+        this?.toDouble() ?: throw IllegalArgumentException("Invalid data for creating an Imaginary Number"),
+        imaginary?.toDouble() ?: throw IllegalArgumentException("Invalid data for creating an Imaginary Number")
+    )
+}
+
+infix fun BigInteger?.plusJ(imaginary: BigInteger?): Complex{
+    return Complex(
+        this ?:throw IllegalArgumentException("Invalid data for creating an Imaginary Number"),
+        imaginary ?:throw IllegalArgumentException("Invalid data for creating an Imaginary Number")
+    )
+}
+infix fun BigDecimal?.plusJ(imaginary: BigDecimal?): Complex{
+    return Complex(
+        this ?:throw IllegalArgumentException("Invalid data for creating an Imaginary Number"),
+        imaginary ?:throw IllegalArgumentException("Invalid data for creating an Imaginary Number")
+    )
+}
+
+
+// Overloads for `+`
+// Overloads for `+` to enable operations like `Int + Complex`.
+operator fun Int.plus(complex: Complex) = Complex(this.toDouble(), 0.0) + complex
+operator fun Long.plus(complex: Complex) = Complex(this.toDouble(), 0.0) + complex
+operator fun Double.plus(complex: Complex) = Complex(this.toDouble(), 0.0) + complex
+operator fun Float.plus(complex: Complex) = Complex(this.toDouble(), 0.0) + complex
+operator fun BigInteger.plus(complex: Complex) = Complex(this.toDouble(), 0.0 ) + complex
+operator fun BigDecimal.plus(complex: Complex) = Complex(this.toDouble(), 0.0 ) + complex
+// Overload for `Complex + Double` to handle cases like `9.0.j + 11.0` which is not likely to be done but 9.0.j + existingComplexNumber might happen more
+operator fun Complex.plus(real: Int): Complex = this + Complex(real, 0.0)
+operator fun Complex.plus(real: Double): Complex = this + Complex(real, 0.0)
+operator fun Complex.plus(real: Long): Complex = this + Complex(real.toDouble(), 0.0)
+operator fun Complex.plus(real: Float): Complex = this + Complex(real.toDouble(), 0.0)
+operator fun Complex.plus(real: BigInteger): Complex = this + Complex(real.toDouble(), 0.0)
+operator fun Complex.plus(real: BigDecimal): Complex = this + Complex(real.toDouble(), 0.0)
+
+// Overloads for `-`
+// Overloads for `-` to enable operations like ` Double - Complex`.
+operator fun Int.minus(complex: Complex) = Complex(this.toDouble(), 0.0) - complex
+operator fun Double.minus(complex: Complex) = Complex(this.toDouble(), 0.0)- complex
+operator fun Long.minus(complex: Complex) = Complex(this.toDouble(), 0.0) - complex
+operator fun Float.minus(complex: Complex) = Complex(this.toDouble(), 0.0) - complex
+operator fun BigInteger.minus(complex: Complex) = Complex(this.toDouble(), 0.0 ) - complex
+operator fun BigDecimal.minus(complex: Complex) = Complex(this.toDouble(), 0.0 ) - complex
+// Overloads for `-` to enable operations like `Complex - Double`.
+operator fun Complex.minus(real: Int): Complex = this - Complex(real, 0.0)
+operator fun Complex.minus(real: Double): Complex = this - Complex(real, 0.0)
+operator fun Complex.minus(real: Long): Complex = this - Complex(real.toDouble(), 0.0)
+operator fun Complex.minus(real: Float): Complex = this - Complex(real.toDouble(), 0.0)
+operator fun Complex.minus(real: BigInteger): Complex = this - Complex(real.toDouble(), 0.0)
+operator fun Complex.minus(real: BigDecimal): Complex = this - Complex(real.toDouble(), 0.0)
+
+// Overloads for `*`
+// Overloads for `*` to enable operations like ` Double * Complex`.
+operator fun Int.times(complex: Complex): Complex = Complex(this.toDouble(), 0.0) * complex
+operator fun Double.times(complex: Complex): Complex = Complex(this.toDouble(), 0.0) + complex
+operator fun Long.times(complex: Complex): Complex = Complex(this.toDouble(), 0.0) + complex
+operator fun Float.times(complex: Complex): Complex = Complex(this.toDouble(), 0.0) + complex
+operator fun BigInteger.times(complex: Complex): Complex = Complex(this.toDouble(), 0.0 ) + complex
+operator fun BigDecimal.times(complex: Complex): Complex = Complex(this.toDouble(), 0.0 ) + complex
+// Overloads for `*` to enable operations like `Complex * Double`.
+operator fun Complex.times(real: Int): Complex = this * Complex(real, 0.0)
+operator fun Complex.times(real: Double): Complex = this * Complex(real, 0.0)
+operator fun Complex.times(real: Long): Complex = this * Complex(real.toDouble(), 0.0)
+operator fun Complex.times(real: Float): Complex = this * Complex(real.toDouble(), 0.0)
+operator fun Complex.times(real: BigInteger): Complex = this * Complex(real.toDouble(), 0.0)
+operator fun Complex.times(real: BigDecimal): Complex = this * Complex(real.toDouble(), 0.0)
+
+// Overloads for `/`
+// Overloads for `/` to enable operations like `Int / Complex`, `Double / Complex`, etc.
+operator fun Int.div(complex: Complex) : Complex = Complex(this.toDouble(), 0.0) / complex
+operator fun Double.div(complex: Complex): Complex  = Complex(this.toDouble(), 0.0) / complex
+operator fun Long.div(complex: Complex) : Complex = Complex(this.toDouble(), 0.0) / complex
+operator fun Float.div(complex: Complex) : Complex = Complex(this.toDouble(), 0.0) / complex
+operator fun BigInteger.div(complex: Complex): Complex  = Complex(this.toDouble(), 0.0) / complex
+operator fun BigDecimal.div(complex: Complex): Complex  = Complex(this.toDouble(), 0.0) / complex
+// Overloads for `/` to enable operations like `Complex / Double`.
+operator fun Complex.div(real: Int): Complex = this / Complex(real, 0.0)
+operator fun Complex.div(real: Double): Complex = this / Complex(real, 0.0)
+operator fun Complex.div(real: Long): Complex = this / Complex(real.toDouble(), 0.0)
+operator fun Complex.div(real: Float): Complex = this / Complex(real.toDouble(), 0.0)
+operator fun Complex.div(real: BigInteger): Complex = this / Complex(real.toDouble(), 0.0)
+operator fun Complex.div(real: BigDecimal): Complex = this / Complex(real.toDouble(), 0.0)
+
+operator fun Complex.times(other: Complex): Complex = ComplexField.run { multiply(this@times, other) }
+operator fun Complex.plus(other: Complex): Complex = ComplexField.run { add(this@plus, other) }
+operator fun Complex.div(other: Complex): Complex = ComplexField.run { divide(this@div, other) }
+operator fun Complex.minus(other: Complex): Complex = ComplexField.run { add(this@minus, -other) }
+</code></pre>
+
+
+
+<p></p>
+
+
+
+<h3 class="wp-block-heading">Conclusion</h3>
+
+
+
+<p>With these extension functions, working with complex numbers in Kotlin becomes as intuitive as in Python. By leveraging KMath’s efficient operations and adding a more user-friendly syntax, you can write cleaner, more expressive code for mathematical computations.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">Call to Action</h3>
+
+
+
+<p>Try out these extension functions in your Kotlin projects today! You will be able find the complete code and documentation on my <a href="https://github.com/robdeas/complex-magic-extensions">GitHub repository</a>. I welcome feedback, contributions, and suggestions for improvement.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">Downloadable Code</h3>
+
+
+
+<p class="nfd-wb-animate nfd-wb-fade-in-top-short nfd-delay-300">You can download a Kotlin file containing all the extension functions mentioned in this post <a href="uploads/2024/10/ComplexExtensions.zip">here</a>.</p>
+
+
+
+<p></p>
+
+
+
+<h3 class="wp-block-heading">License</h3>
+
+
+
+<p>All the code in this blog post and my GitHub repository is licensed under the <strong>Apache License 2.0</strong>. This means you are free to use, modify, and distribute the code as long as you comply with the terms of the license. You can find the complete license terms <a href="https://www.apache.org/licenses/LICENSE-2.0">here</a>.</p>

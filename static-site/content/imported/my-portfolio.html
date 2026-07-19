@@ -1,0 +1,730 @@
+<section class="rp-section rp-section--intro" aria-label="Portfolio intro">
+  <div class="rp-container">
+    <h1 class="rp-title">Open Source Portfolio</h1>
+    <p class="rp-intro">
+      I build practical open-source tools for <b>concurrency, security, and developer productivity</b>.
+      These summaries are recruiter and hiring manager friendly. Each card links to code and detailed write-ups.
+    </p>
+    <p class="rp-intro">
+      Recent highlights include Recent highlights include JCoroutines (structured concurrency for Java 21+, published on Maven Central), ShellGuard (SSH security layer for AI-assisted workflows), and SheafGate (a pattern for running SvelteKit/Bun as a desktop app without Electron).
+    </p>
+    <p class="rp-actions" style="margin-top:1rem;">
+      <!--<a class="btn" href="uploads/Rob_Deas-Profile.pdf">📄 Download CV</a>-->
+      <a class="btn btn--ghost" href="https://www.linkedin.com/in/robdeas/" target="_blank" rel="noopener">🔗 LinkedIn</a>
+      <a class="btn btn--ghost" href="https://github.com/robdeas" target="_blank" rel="noopener">💻 GitHub</a>
+    </p>
+  </div>
+</section>
+<section class="rp-section">
+  <div class="rp-container">
+    <div class="rp-search-section">
+      <label class="rp-label" for="rp-search">Search</label>
+      <input id="rp-search" class="rp-search" placeholder="Search by name or summary…" type="search" />
+    </div>
+    
+    <div id="rp-top" class="rp-top"></div>
+    <div id="rp-meta-wrap-top" class="rp-meta-wrap" hidden>
+      <span id="rp-meta-top" class="rp-meta">0 selected</span>
+      <button id="rp-clear-top" class="rp-link rp-link--small" type="button">Clear</button>
+    </div>
+  </div>
+</section>
+
+<section class="rp-section rp-section--grid">
+  <div class="rp-container">
+    <div id="rp-grid" class="rp-grid" aria-live="polite"></div>
+    <p id="rp-empty" class="rp-empty" hidden>No projects match your filters.</p>
+  </div>
+</section>
+
+<section class="rp-section rp-section--legend" aria-label="Technology colour guide">
+  <div class="rp-container">
+    <div class="rp-legend-header">
+      <p class="rp-legend-title">Technology Areas</p>
+      <div id="rp-legend-meta" class="rp-legend-meta" hidden>
+        <span id="rp-legend-selected" class="rp-legend-selected-tags"></span>
+        <button id="rp-legend-clear" class="rp-link rp-link--small" type="button">Clear</button>
+      </div>
+    </div>
+    <div id="rp-legend" class="rp-legend"></div>
+  </div>
+</section>
+
+<div class="rp-dock" role="region" aria-label="Search and filter projects">
+  <div class="rp-dock-inner rp-container">
+    <div class="rp-dock-tags">
+      <div class="rp-label rp-label--inline">Filter by technology</div>
+      <div id="rp-bottom" class="rp-chips"></div>
+      <div id="rp-meta-wrap" class="rp-meta-wrap" hidden>
+        <span id="rp-meta" class="rp-meta">0 selected</span>
+        <button id="rp-clear" class="rp-link rp-link--small" type="button">Clear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* lean CSS so Astra's fonts/colors remain */
+  .rp-container{max-width:960px;margin:0 auto;padding:0 1rem}
+  .rp-section{padding:2rem 0 1.25rem}
+  .rp-section--grid{padding-bottom:6rem}
+  .rp-title{font-size:clamp(1.75rem,2.5vw,2rem);margin:0;font-weight:700}
+  .rp-intro{margin-top:.75rem;color:#555;font-size:1rem;line-height:1.5}
+  .rp-search-section{margin-top:1.25rem;margin-bottom:1.25rem}
+  .rp-top{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.25rem}
+  .rp-grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  .rp-card{background:#fff;border:1px solid #e5e5e5;border-radius:16px;padding:1.25rem;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+  .rp-card__header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+  .rp-card__header-content{flex:1;min-width:0}
+  .rp-card__logo{
+    width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;
+    cursor:pointer;transition:transform 0.2s ease;
+  }
+  .rp-card__logo:hover{transform:scale(1.05)}
+  
+  .rp-logo-overlay{
+    position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;
+    background:rgba(0,0,0,0.8);opacity:0;pointer-events:none;
+    transition:opacity 0.3s ease;display:flex;align-items:center;justify-content:center;
+  }
+  .rp-logo-overlay.active{opacity:1;pointer-events:auto}
+  .rp-logo-overlay img{
+    max-width:90vw;max-height:90vh;border-radius:16px;
+    box-shadow:0 20px 40px rgba(0,0,0,0.3);
+  }
+  
+  .rp-logo-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .rp-logo-close {
+    position: absolute;
+    top: -16px;
+    right: -16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 1001;
+    line-height: 1;
+    padding: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .rp-logo-close:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  }
+
+  .rp-logo-close:focus {
+    outline: 3px solid #007cba;
+    outline-offset: 2px;
+  }
+
+  .rp-logo-close:active {
+    transform: scale(0.95);
+  }
+  
+  @media (hover: none) and (pointer: coarse) {
+    .rp-card__logo{ position:relative; }
+    
+    .rp-card__logo::after{
+      content:'👁️';
+      position:absolute;
+      bottom:-4px;
+      right:-4px;
+      background:rgba(0, 123, 255, 0.9);
+      color:white;
+      border-radius:50%;
+      width:20px;
+      height:20px;
+      font-size:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border: 2px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .rp-logo-close {
+      top: -20px;
+      right: -20px;
+      width: 48px;
+      height: 48px;
+      font-size: 28px;
+      background: rgba(255, 255, 255, 0.98);
+      border: 3px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .rp-logo-overlay { padding: 20px; }
+    .rp-logo-overlay img { max-width: 85vw; max-height: 75vh; }
+  }
+  
+  .rp-mobile-hint {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    animation: fadeInUp 0.5s ease-out 1s both;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    .rp-logo-overlay.active .rp-mobile-hint { display: block; }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  
+  .rp-card__title{font-size:1.125rem;margin:0;font-weight:600}
+  .rp-card__tagline{font-size:.9rem;color:#666;margin:.25rem 0 0}
+  .rp-card__summary{margin-top:.9rem;line-height:1.6;color:#333}
+  .rp-tech{display:flex;flex-wrap:wrap;gap:.4rem;list-style:none;margin:.9rem 0 0;padding:0}
+  
+  .rp-chip,.rp-chip--active{
+    border:1px solid #cfcfcf;
+    border-radius:9999px;
+    padding:.28rem .7rem;
+    font-size:.8rem;
+    background:#fff;
+    cursor:pointer;
+    color:#333;
+    transition: all 0.2s ease;
+  }
+  
+  .rp-chip:hover { background:#f5f5f5; border-color:#999; }
+  .rp-chip--active{ background:#111; color:#fff; border-color:#111; }
+  .rp-chip--active:hover { background:#333; }
+
+  /* ── Chip colours by technology tag ── */
+
+  .rp-chip[data-tag="Java"],
+  .rp-chip[data-tag="Java 21"],
+  .rp-chip[data-tag="Spring Boot"],
+  .rp-chip[data-tag="JWT"],
+  .rp-chip[data-tag="Databases"],
+  .rp-chip[data-tag="Concurrency"],
+  .rp-chip[data-tag="Structured Concurrency"],
+  .rp-chip[data-tag="Testing"] {
+    background:#E6F1FB;color:#185FA5;border-color:#B5D4F4;
+  }
+
+  .rp-chip[data-tag="Kotlin"],
+  .rp-chip[data-tag="Jetpack Compose"] {
+    background:#EEEDFE;color:#534AB7;border-color:#CECBF6;
+  }
+
+  .rp-chip[data-tag="SvelteKit"],
+  .rp-chip[data-tag="Bun"],
+  .rp-chip[data-tag="TypeScript"],
+  .rp-chip[data-tag="Node.js"],
+  .rp-chip[data-tag="Desktop"],
+  .rp-chip[data-tag="Journal"] {
+    background:#E1F5EE;color:#0F6E56;border-color:#9FE1CB;
+  }
+
+  .rp-chip[data-tag="Security"],
+  .rp-chip[data-tag="DevOps"] {
+    background:#FAEEDA;color:#854F0B;border-color:#FAC775;
+  }
+
+  .rp-chip[data-tag="AI"] {
+    background:#FAECE7;color:#993C1D;border-color:#F5C4B3;
+  }
+
+  .rp-chip[data-tag="CLI"],
+  .rp-chip[data-tag="Developer Tools"],
+  .rp-chip[data-tag="Search"],
+  .rp-chip[data-tag="Automation"],
+  .rp-chip[data-tag="Go"],
+  .rp-chip[data-tag="Terraform"] {
+    background:#F1EFE8;color:#5F5E5A;border-color:#D3D1C7;
+  }
+
+  .rp-chip[data-tag="Arduino"],
+  .rp-chip[data-tag="Hardware"],
+  .rp-chip[data-tag="Zig"],
+  .rp-chip[data-tag="C++"] {
+    background:#FFF0D9;color:#9A4500;border-color:#FFB347;
+  }
+
+  .rp-chip[data-tag="Android"] {
+    background:#EAF3DE;color:#3B6D11;border-color:#C0DD97;
+  }
+
+  /* Selected chip — bright outline, keep colour visible */
+  .rp-chip--active[data-tag] {
+    outline: 3px solid currentColor;
+    outline-offset: 1px;
+    font-weight: 700;
+    filter: brightness(0.82);
+  }
+
+  /* ── end chip colours ── */
+
+  /* ── Colour legend ── */
+  .rp-section--legend{padding:1.5rem 0 7rem}
+  .rp-legend-header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;}
+  .rp-legend-title{font-size:.9rem;font-weight:700;color:#333;margin:0;}
+  .rp-legend-meta{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
+  .rp-legend-selected-tags{font-size:.8rem;color:#555;}
+  .rp-legend{display:flex;flex-direction:column;gap:.75rem;border-top:1px solid #e5e5e5;padding-top:1.25rem}
+  .rp-legend__group{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem}
+  .rp-legend__label{font-size:.75rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.05em;min-width:160px;flex-shrink:0}
+  .rp-legend .rp-chip{cursor:pointer;}
+  .rp-legend .rp-chip:hover{opacity:.85;transform:scale(1.04);}
+  @media(max-width:600px){.rp-legend__label{min-width:100%;margin-bottom:.2rem}}
+  /* ── end legend ── */
+  
+  .rp-links{margin-top:.9rem;display:flex;flex-wrap:wrap;gap:.75rem}
+  .rp-link{font-size:.95rem;text-decoration:underline;text-underline-offset:3px;color:inherit}
+  .rp-link:hover{text-decoration:none}
+  
+  .rp-link--small{
+    font-size:.8rem;
+    color:#fff;
+    font-weight:600;
+    padding:.3rem .75rem;
+    border-radius:4px;
+    background:#0073aa;
+    border:1px solid #0073aa;
+    transition: all 0.2s ease;
+    cursor:pointer;
+  }
+  
+  .rp-link--small:hover {
+    background:#005f8e;
+    color:#fff;
+    text-decoration:none;
+    border-color:#005f8e;
+  }
+  
+  .rp-empty{text-align:center;color:#666;margin-top:1.5rem}
+  .rp-dock{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);border-top:1px solid #e5e5e5;backdrop-filter:blur(6px);z-index:40}
+  .rp-dock-inner{padding:1rem 0;display:grid;gap:.75rem}
+  .rp-label{font-size:.9rem;font-weight:700}
+  .rp-label--inline{margin-bottom:.4rem;font-weight:700}
+  .rp-search{width:100%;border:1px solid #cfcfcf;border-radius:12px;padding:.55rem .8rem;font-size:1rem}
+  .rp-chips{display:flex;flex-wrap:wrap;gap:.5rem}
+  .rp-meta-wrap{display:flex;align-items:center;gap:.75rem;margin-top:.5rem}
+  .rp-meta{font-weight:700}
+  
+  .site-footer,.footer-adv{padding-bottom:6rem}
+</style>
+
+<script>
+  (async () => {
+    const DATA_URL = 'uploads/portfolio-data/projects.json';
+    const res = await fetch(DATA_URL, { cache: 'no-store' });
+    const { projects } = await res.json();
+
+    const jsonLd = {
+      "@context":"https://schema.org",
+      "@type":"ItemList",
+      "itemListElement": projects.map((p,i)=>({
+        "@type":"CreativeWork",
+        "position": i+1,
+        "name": p.name,
+        "about": p.tagline,
+        "description": p.summary,
+        "keywords": p.tech.join(", "),
+        "url": location.origin + location.pathname + '#' + p.id,
+        "sameAs": p.links.map(l=>l.href)
+      }))
+    };
+    const ld = document.createElement('script');
+    ld.type = 'application/ld+json';
+    ld.textContent = JSON.stringify(jsonLd).replace(/</g,'\\u003c');
+    document.head.appendChild(ld);
+
+    const grid = document.getElementById('rp-grid');
+    const empty = document.getElementById('rp-empty');
+    const top = document.getElementById('rp-top');
+    const bottom = document.getElementById('rp-bottom');
+    const metaWrap = document.getElementById('rp-meta-wrap');
+    const metaWrapTop = document.getElementById('rp-meta-wrap-top');
+    const meta = document.getElementById('rp-meta');
+    const metaTop = document.getElementById('rp-meta-top');
+    const clearBtn = document.getElementById('rp-clear');
+    const clearBtnTop = document.getElementById('rp-clear-top');
+    const searchInput = document.getElementById('rp-search');
+    const legendEl = document.getElementById('rp-legend');
+    const legendMeta = document.getElementById('rp-legend-meta');
+    const legendSelected = document.getElementById('rp-legend-selected');
+    const legendClearBtn = document.getElementById('rp-legend-clear');
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'rp-logo-overlay';
+    overlay.innerHTML = `
+      <div class="rp-logo-container">
+        <img src="" alt="">
+        <button class="rp-logo-close" aria-label="Close image">&times;</button>
+      </div>
+      <div class="rp-mobile-hint">Tap anywhere to close</div>
+    `;
+    document.body.appendChild(overlay);
+    const overlayImg = overlay.querySelector('img');
+    const closeBtn = overlay.querySelector('.rp-logo-close');
+
+    const allTags = Array.from(new Set(projects.flatMap(p => p.tech))).sort((a,b)=>a.localeCompare(b));
+    let selected = new Set();
+    let search = '';
+    let currentLogoElement = null;
+    let overlayTimeout;
+
+    if (location.hash.startsWith('#tech=')) {
+      const raw = decodeURIComponent(location.hash.slice('#tech='.length + 1));
+      raw.split(',').map(s=>s.trim()).filter(Boolean).forEach(t => selected.add(t));
+    }
+
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const escAttr = esc;
+
+    function showLogoOverlay(src, alt) {
+      overlayImg.src = src;
+      overlayImg.alt = alt;
+      overlay.classList.add('active');
+      clearTimeout(overlayTimeout);
+      const isMobile = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      overlayTimeout = setTimeout(() => { hideLogoOverlay(); }, isMobile ? 4000 : 2000);
+    }
+    
+    function hideLogoOverlay() {
+      overlay.classList.remove('active');
+      clearTimeout(overlayTimeout);
+      if (currentLogoElement && currentLogoElement._closeOverlay) {
+        currentLogoElement._closeOverlay();
+      }
+      currentLogoElement = null;
+    }
+
+    function renderChips(container){
+      container.innerHTML = '';
+      allTags.forEach(tag => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'rp-chip' + (selected.has(tag) ? ' rp-chip--active':'');
+        btn.textContent = tag;
+        btn.setAttribute('data-tag', tag);
+        btn.setAttribute('aria-pressed', selected.has(tag) ? 'true' : 'false');
+        btn.onclick = () => toggleTag(tag);
+        container.appendChild(btn);
+      });
+    }
+
+    // Legend groups — edit here to add/remove tags or groups
+    // To add a future tag, add it to the relevant group's tags array
+    const legendGroups = [
+      { label: 'JVM',                        tags: ['Java','Java 21','Spring Boot','JWT','Databases','Concurrency','Structured Concurrency','Testing'] },
+      { label: 'Kotlin',                     tags: ['Kotlin','Jetpack Compose'] },
+      { label: 'Web / Local-first',          tags: ['SvelteKit','Bun','TypeScript','Node.js','Desktop','Journal'] },
+      { label: 'Security',                   tags: ['Security','DevOps'] },
+      { label: 'AI / LLM tooling',           tags: ['AI'] },
+      { label: 'Dev tooling & infrastructure', tags: ['CLI','Developer Tools','Search','Automation','Go'] },
+      // Terraform: uncomment when first Terraform project is added
+      // { label: 'Dev tooling & infrastructure', tags: ['Terraform'] },
+      { label: 'Closer to hardware',         tags: ['Arduino','Hardware'] },
+      // Zig: uncomment tag below when first Zig project is added
+      // { label: 'Closer to hardware',       tags: ['Zig'] },
+      // C++: uncomment tag below when a standalone C++ project is added
+      // { label: 'Closer to hardware',       tags: ['C++'] },
+      { label: 'Android',                    tags: ['Android'] },
+    ];
+
+    function renderLegend(){
+      legendEl.innerHTML = '';
+      legendGroups.forEach(group => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'rp-legend__group';
+        const labelEl = document.createElement('span');
+        labelEl.className = 'rp-legend__label';
+        labelEl.textContent = group.label;
+        groupEl.appendChild(labelEl);
+        group.tags.forEach(tag => {
+          const chip = document.createElement('span');
+          chip.className = 'rp-chip' + (selected.has(tag) ? ' rp-chip--active' : '');
+          chip.setAttribute('data-tag', tag);
+          chip.setAttribute('role', 'button');
+          chip.setAttribute('tabindex', '0');
+          chip.setAttribute('aria-pressed', selected.has(tag) ? 'true' : 'false');
+          chip.textContent = tag;
+          chip.onclick = () => toggleTag(tag);
+          chip.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') chip.click(); };
+          groupEl.appendChild(chip);
+        });
+        legendEl.appendChild(groupEl);
+      });
+
+      // Update selected summary
+      if (selected.size) {
+        legendMeta.hidden = false;
+        legendSelected.textContent = [...selected].join(', ');
+      } else {
+        legendMeta.hidden = true;
+        legendSelected.textContent = '';
+      }
+    }
+
+    function renderGrid(list){
+      currentLogoElement = null;
+      grid.innerHTML = '';
+      list.forEach(p => {
+        const el = document.createElement('article');
+        el.id = p.id;
+        el.className = 'rp-card';
+        
+        const logoHtml = p.logo ? 
+          `<img src="uploads/portfolio-data/${escAttr(p.logo)}" alt="${escAttr(p.name)} logo" class="rp-card__logo" onerror="this.style.display='none'" data-logo-src="uploads/portfolio-data/${escAttr(p.logo)}" data-logo-alt="${escAttr(p.name)} logo">` : '';
+        
+        el.innerHTML = `
+          <header class="rp-card__header">
+            <div class="rp-card__header-content">
+              <h2 class="rp-card__title">${esc(p.name)}</h2>
+              <p class="rp-card__tagline">${esc(p.tagline)}</p>
+            </div>
+            ${logoHtml}
+          </header>
+          <p class="rp-card__summary">${esc(p.summary)}</p>
+          <ul class="rp-tech">
+            ${p.tech.map(t => `<li class="rp-chip" data-tag="${escAttr(t)}">${esc(t)}</li>`).join('')}
+          </ul>
+          <div class="rp-links">
+            ${p.links.map(l => `<a class="rp-link" href="${escAttr(l.href)}">${esc(l.label)}</a>`).join('')}
+          </div>
+        `;
+        
+        const logo = el.querySelector('.rp-card__logo');
+        if (logo) {
+          const logoSrc = logo.dataset.logoSrc;
+          const logoAlt = logo.dataset.logoAlt;
+          let hoverTimeout;
+          let isOverlayOpen = false;
+          
+          logo.addEventListener('mouseenter', () => {
+            currentLogoElement = logo;
+            if (isOverlayOpen) return;
+            clearTimeout(hoverTimeout);
+            hoverTimeout = setTimeout(() => {
+              showLogoOverlay(logoSrc, logoAlt);
+              isOverlayOpen = true;
+            }, 200);
+          });
+          
+          logo.addEventListener('mouseleave', () => {
+            if (!isOverlayOpen) clearTimeout(hoverTimeout);
+          });
+          
+          logo.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentLogoElement = logo;
+            if (!isOverlayOpen) {
+              showLogoOverlay(logoSrc, logoAlt);
+              isOverlayOpen = true;
+            }
+          });
+          
+          logo._closeOverlay = () => { isOverlayOpen = false; };
+        }
+        
+        grid.appendChild(el);
+      });
+      empty.hidden = list.length !== 0;
+    }
+
+    function apply(){
+      const q = search.trim().toLowerCase();
+      const list = projects.filter(p => {
+        const text = (p.name + ' ' + p.tagline + ' ' + p.summary).toLowerCase();
+        const matchesSearch = q ? text.includes(q) : true;
+        const matchesTags = selected.size ? [...selected].every(t => p.tech.includes(t)) : true;
+        return matchesSearch && matchesTags;
+      });
+      renderGrid(list);
+
+      if (selected.size) {
+        metaWrap.hidden = false;
+        metaWrapTop.hidden = false;
+        meta.textContent = `${selected.size} selected`;
+        metaTop.textContent = `${selected.size} selected`;
+      } else {
+        metaWrap.hidden = true;
+        metaWrapTop.hidden = true;
+        meta.textContent = '0 selected';
+        metaTop.textContent = '0 selected';
+      }
+
+      const val = [...selected].join(',');
+      if (val) location.hash = `tech=${encodeURIComponent(val)}`;
+      else history.replaceState(null, '', location.pathname + location.search);
+    }
+
+    function toggleTag(tag){
+      if (selected.has(tag)) selected.delete(tag); else selected.add(tag);
+      renderChips(top); renderChips(bottom); renderLegend(); apply();
+    }
+
+    function clearAll() {
+      selected = new Set(); 
+      renderChips(top); 
+      renderChips(bottom);
+      renderLegend();
+      apply();
+    }
+
+    document.addEventListener('rp-tag-click', (e) => { toggleTag(e.detail); });
+
+    searchInput.addEventListener('input', () => { search = searchInput.value || ''; apply(); });
+    clearBtn.addEventListener('click', clearAll);
+    clearBtnTop.addEventListener('click', clearAll);
+    legendClearBtn.addEventListener('click', clearAll);
+    
+    closeBtn.addEventListener('click', (e) => { e.stopPropagation(); hideLogoOverlay(); });
+    overlay.addEventListener('click', () => { hideLogoOverlay(); });
+    overlayImg.addEventListener('click', (e) => { e.stopPropagation(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideLogoOverlay(); });
+    
+    overlay.addEventListener('mouseenter', () => {
+      if (!window.matchMedia('(hover: none) and (pointer: coarse)').matches) clearTimeout(overlayTimeout);
+    });
+    
+    overlay.addEventListener('mouseleave', () => {
+      if (!window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+        clearTimeout(overlayTimeout);
+        overlayTimeout = setTimeout(() => { hideLogoOverlay(); }, 500);
+      }
+    });
+
+    renderChips(top); 
+    renderChips(bottom);
+    renderLegend();
+    renderGrid(projects); 
+    apply();
+
+  })();
+</script>
+
+<noscript>
+  <style>
+    .rp-search-section { display: none !important; }
+    .rp-dock { display: none !important; }
+    .rp-section--legend { display: none !important; }
+    #rp-meta-wrap-top { display: none !important; }
+    .rp-section--grid { padding-bottom: 2rem; }
+  </style>
+  <div class="rp-container">
+    <div style="background:#f9f9f9;border:1px solid #ddd;border-radius:8px;padding:1.5rem;margin:2rem 0;">
+      <h2 style="margin-top:0;color:#333;">Open Source Projects</h2>
+      <p style="color:#666;margin-bottom:1.5rem;">JavaScript is required for filtering and search. Here are all projects:</p>
+      <div style="display:grid;gap:1.5rem;">
+        <article style="border-bottom:1px solid #eee;padding-bottom:1rem;">
+          <h3 style="color:#333;margin:0 0 0.5rem 0;font-size:1.1rem;">JCoroutines</h3>
+          <p style="color:#777;margin:0 0 0.5rem 0;font-size:0.9rem;font-style:italic;">Structured concurrency for plain Java</p>
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">Virtual Threads arrived in Java 21 but structured concurrency remained in preview. JCoroutines fills that gap with clean, production-ready APIs.</p>
+          <p style="margin:0 0 0.5rem 0;"><strong>Technologies:</strong> Java, Concurrency, Structured Concurrency, Testing</p>
+          <p style="margin:0;"><a href="https://github.com/robdeas/jcoroutines" style="color:#0073aa;">GitHub</a> &middot; <a href="https://central.sonatype.com/artifact/tech.robd/jcoroutines" style="color:#0073aa;">Maven Central</a></p>
+        </article>
+        <article style="border-bottom:1px solid #eee;padding-bottom:1rem;">
+          <h3 style="color:#333;margin:0 0 0.5rem 0;font-size:1.1rem;">ABCoroutines</h3>
+          <p style="color:#777;margin:0 0 0.5rem 0;font-size:0.9rem;font-style:italic;">Structured concurrency for Kotlin on Java 21</p>
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">Bridges Kotlin coroutines to the Java 21 virtual thread model with clean, idiomatic structured concurrency primitives.</p>
+          <p style="margin:0 0 0.5rem 0;"><strong>Technologies:</strong> Kotlin, Concurrency, Structured Concurrency, Java 21</p>
+          <p style="margin:0;"><a href="https://github.com/robdeas/abcoroutines" style="color:#0073aa;">GitHub</a> &middot; <a href="https://central.sonatype.com/artifact/tech.robd/abcoroutines" style="color:#0073aa;">Maven Central</a></p>
+        </article>
+        <article style="border-bottom:1px solid #eee;padding-bottom:1rem;">
+          <h3 style="color:#333;margin:0 0 0.5rem 0;font-size:1.1rem;">NotNull4J</h3>
+          <p style="color:#777;margin:0 0 0.5rem 0;font-size:0.9rem;font-style:italic;">Runtime null-safety at trust boundaries</p>
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">Extends JSpecify with runtime null enforcement at external boundaries — APIs, databases, deserialised payloads — where static analysis can't reach.</p>
+          <p style="margin:0 0 0.5rem 0;"><strong>Technologies:</strong> Java, Security</p>
+          <p style="margin:0;"><a href="https://github.com/robdeas/notnull4j" style="color:#0073aa;">GitHub</a> &middot; <a href="https://central.sonatype.com/artifact/tech.robd/notnull4j" style="color:#0073aa;">Maven Central</a></p>
+        </article>
+        <article style="border-bottom:1px solid #eee;padding-bottom:1rem;">
+          <h3 style="color:#333;margin:0 0 0.5rem 0;font-size:1.1rem;">Sandcastle Auth</h3>
+          <p style="color:#777;margin:0 0 0.5rem 0;font-size:0.9rem;font-style:italic;">Spring Boot auth server with token governance</p>
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">A lightweight authorization server with scoped tokens, configurable expiry, and centralised role syncing. No vendor lock-in.</p>
+          <p style="margin:0 0 0.5rem 0;"><strong>Technologies:</strong> Java, Kotlin, Spring Boot, JWT, Security</p>
+          <p style="margin:0;"><a href="https://github.com/robdeas/sandcastle-auth" style="color:#0073aa;">GitHub</a></p>
+        </article>
+        <article style="border-bottom:1px solid #eee;padding-bottom:1rem;">
+          <h3 style="color:#333;margin:0 0 0.5rem 0;font-size:1.1rem;">SheafGate</h3>
+          <p style="color:#777;margin:0 0 0.5rem 0;font-size:0.9rem;font-style:italic;">SvelteKit/Bun as a desktop app — without Electron</p>
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">A Go binary that spawns a Bun/SvelteKit server on an ephemeral port with UUID auth, giving a full desktop app feel with zero Electron overhead.</p>
+          <p style="margin:0 0 0.5rem 0;"><strong>Technologies:</strong> Go, SvelteKit, Bun, TypeScript, Security, Desktop</p>
+          <p style="margin:0;"><a href="https://github.com/robdeas/sheafgate" style="color:#0073aa;">GitHub</a></p>
+        </article>
+        <article style="border-bottom:1px solid #eee;padding-bottom:1rem;">
+          <h3 style="color:#333;margin:0 0 0.5rem 0;font-size:1.1rem;">SheafJournal</h3>
+          <p style="color:#777;margin:0 0 0.5rem 0;font-size:0.9rem;font-style:italic;">Local-first developer journal and PKM</p>
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">A desktop PKM built on SheafGate. Markdown, Mermaid diagrams, full-text search, frontmatter tags, and a journal-style todo system — all local, all fast.</p>
+          <p style="margin:0 0 0.5rem 0;"><strong>Technologies:</strong> TypeScript, SvelteKit, Bun, Desktop</p>
+          <p style="margin:0;"><a href="https://github.com/robdeas/sheafjournal" style="color:#0073aa;">GitHub</a></p>
+        </article>
+        <article style="border-bottom:1px solid #eee;padding-bottom:1rem;">
+          <h3 style="color:#333;margin:0 0 0.5rem 0;font-size:1.1rem;">ShellGuard</h3>
+          <p style="color:#777;margin:0 0 0.5rem 0;font-size:0.9rem;font-style:italic;">SSH proxy for AI agent shell access mediation</p>
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">Sits between an AI agent and the shell, mediating access with configurable allow/deny rules and a full audit trail.</p>
+          <p style="margin:0 0 0.5rem 0;"><strong>Technologies:</strong> Security, AI, DevOps, Kotlin, Spring Boot</p>
+          <p style="margin:0;"><a href="#/shellguard-ssh-security-for-the-age-of-ai/" style="color:#0073aa;">Read More</a></p>
+        </article>
+        <article style="border-bottom:1px solid #eee;padding-bottom:1rem;">
+          <h3 style="color:#333;margin:0 0 0.5rem 0;font-size:1.1rem;">VerZanctuary</h3>
+          <p style="color:#777;margin:0 0 0.5rem 0;font-size:0.9rem;font-style:italic;">Safe code snapshots before AI edits</p>
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">Creates named snapshots of your working state before handing off to an AI agent, so you can always compare, restore, and roll back cleanly.</p>
+          <p style="margin:0 0 0.5rem 0;"><strong>Technologies:</strong> Kotlin, CLI, Developer Tools, AI</p>
+          <p style="margin:0;"><a href="https://github.com/robdeas/verzanctuary" style="color:#0073aa;">GitHub</a></p>
+        </article>
+        <article style="border-bottom:1px solid #eee;padding-bottom:1rem;">
+          <h3 style="color:#333;margin:0 0 0.5rem 0;font-size:1.1rem;">Robokeyboard</h3>
+          <p style="color:#777;margin:0 0 0.5rem 0;font-size:0.9rem;font-style:italic;">Hardware-software automation bridge</p>
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">An Arduino-based programmable keyboard — firmware in C++ as an Arduino sketch — communicating via serial to a Kotlin control app.</p>
+          <p style="margin:0 0 0.5rem 0;"><strong>Technologies:</strong> Arduino, Kotlin, Automation, Desktop, Hardware</p>
+          <p style="margin:0;"><a href="https://github.com/robdeas/robokey" style="color:#0073aa;">GitHub</a></p>
+        </article>
+        <article style="border-bottom:1px solid #eee;padding-bottom:1rem;">
+          <h3 style="color:#333;margin:0 0 0.5rem 0;font-size:1.1rem;">RoboKeyTags</h3>
+          <p style="color:#777;margin:0 0 0.5rem 0;font-size:0.9rem;font-style:italic;">Structured comment system for AI agent communication</p>
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">A structured comment convention letting developers annotate code with machine-readable context — constraints, ownership, risk level — for AI agent consumption.</p>
+          <p style="margin:0 0 0.5rem 0;"><strong>Technologies:</strong> AI, Developer Tools, Kotlin</p>
+          <p style="margin:0;"><a href="https://github.com/robdeas/robokeytags" style="color:#0073aa;">GitHub</a></p>
+        </article>
+        <article style="border-bottom:1px solid #eee;padding-bottom:1rem;">
+          <h3 style="color:#333;margin:0 0 0.5rem 0;font-size:1.1rem;">Puzzlegrep</h3>
+          <p style="color:#777;margin:0 0 0.5rem 0;font-size:0.9rem;font-style:italic;">Structured search for code, not just text</p>
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">A TypeScript CLI that matches meaningful code structures across repositories — not just strings. Speeds up refactors and cross-repo audits.</p>
+          <p style="margin:0 0 0.5rem 0;"><strong>Technologies:</strong> TypeScript, Node.js, CLI, Search, Developer Tools</p>
+          <p style="margin:0;"><a href="https://github.com/robdeas/puzzlegrep" style="color:#0073aa;">GitHub</a></p>
+        </article>
+        <article style="padding-bottom:0;border-bottom:none;">
+          <h3 style="color:#333;margin:0 0 0.5rem 0;font-size:1.1rem;">Music Rhythm Timing</h3>
+          <p style="color:#777;margin:0 0 0.5rem 0;font-size:0.9rem;font-style:italic;">Rhythm training app for musicians</p>
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">A Jetpack Compose Android app with Redux/MVI architecture that teaches rhythmic timing through interaction. Released GPL-3.0 for F-Droid.</p>
+          <p style="margin:0 0 0.5rem 0;"><strong>Technologies:</strong> Android, Kotlin, Jetpack Compose</p>
+          <p style="margin:0;"><a href="https://github.com/robdeas/musical_note_timing_player" style="color:#0073aa;">GitHub</a></p>
+        </article>
+      </div>
+    </div>
+  </div>
+</noscript>
+
+
+
+<p></p>

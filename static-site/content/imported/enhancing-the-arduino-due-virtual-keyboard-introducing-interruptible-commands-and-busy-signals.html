@@ -1,0 +1,518 @@
+<p>In my previous blog post,, I introduced My project where an <strong>Arduino Due</strong> acted as a virtual keyboard—I called the "RoboKeyboard"—controlled by a Kotlin PC program. This setup allowed for keyboard macros and testing by sending commands from the PC to the Arduino, which would then emulate keystrokes to a connected device.</p>
+
+
+
+<p>While the initial version provided a solid foundation, it lacked the ability to handle interruptions during lengthy operations. This limitation could lead to synchronization issues between the PC program and the Arduino, especially when sending large amounts of data or complex commands.</p>
+
+
+
+<p>In this blog post, I'll walk you through the enhancements made to the original code, focusing on:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Introducing interruptible commands</strong></li>
+
+
+
+<li><strong>Implementing a busy signal mechanism</strong></li>
+
+
+
+<li><strong>Updating command parsing and execution for better responsiveness</strong></li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Overview of the Original Code</h2>
+
+
+
+<p>The initial version of the Arduino sketch provided basic functionalities:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Command Parsing</strong>: The Arduino read commands from the serial port and executed them accordingly.</li>
+
+
+
+<li><strong>Keyboard Emulation</strong>: It could send keystrokes, key combinations, and perform edit actions like cut, copy, and paste.</li>
+
+
+
+<li><strong>Status Reporting</strong>: The Arduino could respond to basic status inquiries like <code>PING</code> and <code>STATUS</code>.</li>
+
+
+
+<li><strong>Configuration Options</strong>: It allowed settings for delays, key press lengths, and enabled or disabled features like echo and debug messages.</li>
+</ul>
+
+
+
+<p>However, the code executed commands in a <strong>blocking manner</strong>. Once a command started, it had to complete before the Arduino could process any new input. This behavior was not ideal for a responsive system, especially when dealing with long text inputs or complex operations.</p>
+
+
+
+<h2 class="wp-block-heading">Reason for choice of Arduino Due</h2>
+
+
+
+<p>The Arduino Due is quite an old board now but still available and useful for this project as it has two USB ports one of which can emulate a keyboard. I chose it as I happened to have one spare from a few years back. It would be possible to replace this board with two different boards connected together communicating via serial links. If it needed to be used with a different board however. It would be easier to use a more modern board with the same 2 USB ports one of which can emulate a keyboard.</p>
+
+
+
+<p></p>
+
+
+
+<h2 class="wp-block-heading">New Features and Improvements</h2>
+
+
+
+<h3 class="wp-block-heading">1. Interruptible Commands</h3>
+
+
+
+<p>The updated code introduces the ability to <strong>interrupt ongoing commands</strong>. This means that if the Arduino is in the middle of processing a long command, such as typing a lengthy text, it can now stop immediately upon receiving an interrupt signal.</p>
+
+
+
+<p>You can now interrupt ongoing commands using the <code>CMD:STOP</code> and <code>CMD:PAUSE</code> commands. <code>CMD:STOP</code> halts the current action and clears any pending text, while <code>CMD:PAUSE</code> temporarily suspends typing without losing data. This allows for more control over RoboKeyboard's actions.</p>
+
+
+
+<h3 class="wp-block-heading">2. <strong>Non-Blocking Operations</strong></h3>
+
+
+
+<p>Long actions like typing large amounts of text are now handled in a non-blocking manner. This prevents RoboKeyboard from becoming unresponsive during these operations, allowing it to react to other commands more efficiently.</p>
+
+
+
+<h3 class="wp-block-heading">3. Busy Signal Mechanism</h3>
+
+
+
+<p>RoboKeyboard now sends a "busy" signal to the controlling Kotlin program when it's processing a command. This prevents the program from sending additional commands while RoboKeyboard is occupied, ensuring smoother operation and preventing input conflicts.Long actions like typing large amounts of text are now handled in a non-blocking manner. This prevents RoboKeyboard from becoming unresponsive during these operations, allowing it to react to other commands more efficiently.</p>
+
+
+
+<h3 class="wp-block-heading">4. Improved Command Parsing and Execution</h3>
+
+
+
+<p>The command parsing logic has been refactored for better efficiency and scalability.</p>
+
+
+
+<p><strong>Key Changes:</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Normalized Commands</strong>: Commands are normalized to a standard format, replacing delimiters like <code>_</code>, <code>-</code>, <code>.</code>, <code>,</code>, and spaces with colons (<code>:</code>). This unification simplifies parsing.</li>
+
+
+
+<li><strong>Command Lookup Table</strong>: A structured array (<code>knownCommands[]</code>) holds all valid commands with their associated types and parameter expectations.</li>
+
+
+
+<li><strong>Non-Blocking Actions</strong>: Actions are now represented by a state machine (<code>Action</code> struct and <code>ActionType</code> enum), allowing the main loop to process them incrementally without blocking.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">5. I<strong>mproved Status Reporting</strong></h3>
+
+
+
+<p>The <code>STATUS</code> command now provides a more detailed report, including the device's state (connected/disconnected, ready/busy, paused), debug and echo settings, and version information. This enhanced feedback gives you a clearer picture of the Arduinio Due's status.</p>
+
+
+
+<h2 class="wp-block-heading">Detailed Explanation of Changes</h2>
+
+
+
+<h3 class="wp-block-heading">Command Struct and Normalization</h3>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<pre class="wp-block-code"><code><code>struct Command {
+  const char* name;
+  CommandType type;
+  bool hasParameter;
+};</code></code></pre>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Purpose</strong>: Simplifies command parsing by associating command strings with their types and whether they expect parameters.</li>
+
+
+
+<li><strong>Normalization Function</strong>: Converts incoming commands to uppercase and replaces various delimiters with colons.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Interruptible Actions</h3>
+
+
+
+<h4 class="wp-block-heading">Action State Machine</h4>
+
+
+
+<pre class="wp-block-code"><code><code>enum ActionType {
+  NONE,
+  SEND_MESSAGE,
+  TYPE_LOREM_IPSUM,
+  // ... other action types
+};
+
+struct Action {
+  ActionType type;
+  String message;
+  int index;
+  // ... other fields
+};</code></code></pre>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Non-Blocking Execution</strong>: By representing actions as states, the main loop can process parts of actions incrementally.</li>
+
+
+
+<li><strong>Interrupt Checking</strong>: Before each incremental action, the code checks if an interrupt signal (<code>isStopRequested</code> flag) has been set.</li>
+</ul>
+
+
+
+<h4 class="wp-block-heading">Stop Command Implementation</h4>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<pre class="wp-block-code"><code><code>case CMD_STOP:
+  isStopRequested = true;
+  currentAction.type = NONE;
+  isBusy = false;
+  Keyboard.releaseAll();
+  sendStatusResponse();
+  break;</code></code></pre>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Functionality</strong>: Immediately stops the current action, resets the action state, and releases any pressed keys.</li>
+
+
+
+<li><strong>User Feedback</strong>: Sends a status response to inform the PC program of the new state.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Busy Signal Reporting</h3>
+
+
+
+<h4 class="wp-block-heading">Status Response Enhancement</h4>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<pre class="wp-block-code"><code><code>void sendStatusResponse(bool fullStatus = false) {
+  Serial.print(F("RESPONSE:{\"app\": \"RoboKeysDuino\", \"paused\": \""));
+  Serial.print(isPaused ? "yes" : "no");
+  Serial.print(F("\", \"busy\": \""));
+  Serial.print(isBusy ? "yes" : "no");
+  // ... additional status fields
+  Serial.println(F("\"}"));
+}</code></code></pre>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Fields Added</strong>: <code>paused</code> and <code>busy</code> fields provide real-time status.</li>
+
+
+
+<li><strong>Integration with PC Program</strong>: The Kotlin application can parse this JSON-formatted string to adjust its behavior accordingly.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Improved Command Parsing Logic</h3>
+
+
+
+<h4 class="wp-block-heading">Normalization Function</h4>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<pre class="wp-block-code"><code><code>String normalizeCommand(const String&amp; command) {
+  // ... code to replace delimiters and convert to uppercase
+  return String(buffer);
+}</code></code></pre>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Purpose</strong>: Ensures that commands are in a consistent format for easier matching.</li>
+
+
+
+<li><strong>Benefit</strong>: Reduces parsing errors and allows for more flexible input from the user.</li>
+</ul>
+
+
+
+<h4 class="wp-block-heading">Command Lookup</h4>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<pre class="wp-block-code"><code><code>Command* findCommand(const String&amp; command, String&amp; parameter) {
+  String normalizedCommand = normalizeCommand(command);
+  // ... code to find and return the matching command
+}</code></code></pre>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Efficiency</strong>: By iterating over the <code>knownCommands[]</code> array, the code can quickly identify valid commands and extract parameters.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Non-Blocking Main Loop</h3>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<pre class="wp-block-code"><code><code>void loop() {
+  // ... code to read serial input
+  processCurrentAction();
+}</code></code></pre>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Separation of Concerns</strong>: The <code>processCurrentAction()</code> function handles ongoing actions, while the main loop remains responsive to new input.</li>
+
+
+
+<li><strong>Interruption Checks</strong>: Before executing parts of an action, the code checks if it should stop or pause.</li>
+</ul>
+
+
+
+<h4 class="wp-block-heading">Action Processing Function</h4>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<pre class="wp-block-code"><code><code>void processCurrentAction() {
+  if (currentAction.type == NONE || isStopRequested || isPaused) {
+    // ... code to handle idle or interrupted states
+    return;
+  }
+  
+  switch (currentAction.type) {
+    case SEND_MESSAGE:
+      // ... incremental processing of the message
+      break;
+    // ... other cases
+  }
+  
+  // ... code to update busy status
+}</code></code></pre>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Incremental Execution</strong>: Actions like sending a message are processed one character at a time, allowing for interruption.</li>
+
+
+
+<li><strong>State Updates</strong>: The busy status is updated based on whether an action is in progress.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Additional Commands</h3>
+
+
+
+<h4 class="wp-block-heading">Pause and Resume</h4>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<pre class="wp-block-code"><code><code>case CMD_PAUSE:
+  isPaused = true;
+  isBusy = false;
+  sendStatusResponse();
+  break;
+
+case CMD_RESUME:
+  isPaused = false;
+  isStopRequested = false;
+  break;</code></code></pre>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Pause (<code>CMD:PAUSE</code>)</strong>: Temporarily halts ongoing actions without losing the current state.</li>
+
+
+
+<li><strong>Resume (<code>CMD:RESUME</code>)</strong>: Continues processing from where it was paused.</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">How the Improvements Enhance Functionality</h2>
+
+
+
+<h3 class="wp-block-heading">Benefits of Interruptible Commands</h3>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Responsiveness</strong>: The Arduino can now react immediately to critical commands, improving user experience.</li>
+
+
+
+<li><strong>Error Handling</strong>: If the PC program detects an issue, it can send a stop command to prevent unwanted behavior.</li>
+
+
+
+<li><strong>Flexibility</strong>: Users can adjust settings or change commands on the fly without waiting for long operations to complete.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Ensuring Smooth Communication</h3>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Busy Signals</strong>: By informing the PC program of its current status, the Arduino helps prevent command collisions and data loss.</li>
+
+
+
+<li><strong>State Synchronization</strong>: The enhanced status reporting ensures that both the Arduino and PC program have a consistent understanding of the system state.</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Conclusion</h2>
+
+
+
+<p>The updated Arduino code for the RoboKeyboard significantly improves its robustness and usability. By introducing interruptible commands and a busy signal mechanism, we ensure smoother operation and better coordination with the controlling Kotlin program.</p>
+
+
+
+<p><strong>Key Takeaways:</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Non-Blocking Operations</strong>: Transitioning to a state machine approach allows for responsive and interruptible command execution.</li>
+
+
+
+<li><strong>Enhanced Communication</strong>: Busy signals and detailed status reports keep the PC program and Arduino in sync.</li>
+
+
+
+<li><strong>Scalable Design</strong>: The refactored command parsing logic makes it easier to add new commands and features in the future.</li>
+</ul>
+
+
+
+<p><strong>Future Improvements:</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Error Recovery</strong>: Implementing retries or error correction mechanisms.</li>
+
+
+
+<li><strong>Advanced Commands</strong>: Adding support for macros or complex command sequences.</li>
+
+
+
+<li><strong>Security</strong>: Introducing authentication for commands to prevent unauthorized access.</li>
+</ul>
+
+
+
+<p>By addressing the limitations of the original code, we have created a more robust and user-friendly virtual keyboard system, paving the way for further enhancements and applications.</p>
+
+
+
+<p></p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h3 class="wp-block-heading">Downloadable Code</h3>
+
+
+
+<p>You can download a Kotlin file containing all the extension functions mentioned in this post&nbsp;<a href="uploads/2024/10/ComplexExtensions.zip">here</a>.</p>
+
+
+
+<p>You will be able find the complete code and documentation on my <a href="https://github.com/robdeas/robo-keyboard-arduino-due" title="">GitHub repository</a>. I welcome feedback, contributions, and suggestions for improvement.</p>
+
+
+
+<h3 class="wp-block-heading">License</h3>
+
+
+
+<p>This code is licensed under the GNU General Public License v3.0 or later.<br>You can find a copy of the license at <a href="https://www.gnu.org/licenses/gpl-3.0.en.html">https://www.gnu.org/licenses/gpl-3.0.en.html</a></p>
+
+
+
+<p></p>

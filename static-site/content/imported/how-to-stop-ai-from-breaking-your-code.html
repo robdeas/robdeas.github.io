@@ -1,0 +1,117 @@
+Sometimes the biggest productivity boost is just not losing your work.
+<h3>The Frustration</h3>
+You ask an AI assistant to scaffold a new endpoint or component. It does a great job. Weeks later, you ask it for a small change, and it overwrites your carefully tuned code with generic boilerplate.
+
+I've seen it happen often enough that I now back up my code every time I ask an AI for help. On the backend, it happens in Spring Boot controllers. On the frontend, it's SvelteKit components. In both cases, I’ve lost custom logic, styling, or validation. It’s not really happening because the AI is wrong, but because it doesn’t know what parts of the file it shouldn't touch.
+<h3>The Real Problem</h3>
+AI coding tools are incredibly powerful, but we’re still working with tools that don’t understand ownership. There's no shared language between humans and machines about which parts of a file are editable, protected, or generated. And that’s a problem, especially as we move toward more AI-assisted development.
+<h3>The Solution I Needed: Robokeytags</h3>
+To solve this, I created Robokeytags: a simple comment-based tagging system that tells tools what’s safe to touch and what isn’t.
+
+It uses three emoji markers:
+
+🧩 Puzzle — Structural metadata (regions, boundaries, edit rules)
+
+📌 Pin  — Human-readable documentation (context, warnings, TODOs)
+
+🤖 Robot — AI's persistent memory (patterns, confidence, analysis)
+<h3>The File Info Block</h3>
+One of the most useful parts of Robokeytags isn’t even about regions of code, it’s the file header.
+
+At the top of a file, you can include a structured [🧩 File Info] block. This acts like metadata for humans and tools:
+
+// [🧩 File Info]
+// path: src/routes/user/+page.svelte
+// description: User dashboard view
+// created: 2025-05-21
+// editable: yes
+// puzzlepins_version: 1.0
+// [📌 Note: This file contains sensitive UI interactions.]
+// [/🧩 File Info]
+
+It works like a file-level README. Tools can use it for indexing, and humans can use it to remember what the file does and why it matters.
+<h3>How It Works (In Real Code)</h3>
+<h5>Here’s a Spring Boot example:</h5>
+<pre>@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+// [🧩 Region: NonEditable: crud/basic]
+@GetMapping
+public ResponseEntity&lt;List&gt; getAllUsers() {
+return ResponseEntity.ok(userService.findAll());
+}
+// [/ 🧩 Region: NonEditable: crud/basic]
+
+// [🧩 Region: Editable: custom/logic]
+@PostMapping("/verify")
+public ResponseEntity&lt;?&gt; verifyUser(...) {
+// Custom logic the AI should never touch
+return runComplexVerification();
+}
+// [/ 🧩 Region: Editable: custom/logic]
+}</pre>
+<h5>And here’s a snippet from a SvelteKit component:</h5>
+<!-- [🧩 Region: Editable: state/custom] -->
+<pre>&lt;!-- [🧩 Region: NonEditable: component/props] --&gt;
+&lt;script&gt;
+export let title;
+export let items = [];
+&lt;/script&gt;
+&lt;!-- [/🧩 Region: NonEditable: component/props] --&gt;
+
+&lt;!-- [🧩 Region: Editable: component/state] --&gt;
+&lt;!-- [🤖 pattern-detected: Local state management] --&gt;
+&lt;script&gt;
+let selectedId = null;
+function toggle() { ... }
+&lt;/script&gt;
+&lt;!-- [/🧩 Region: Editable: component/state] --&gt;</pre>
+It’s just structured comments. But those comments make all the difference.
+<h3 class="whitespace-normal break-words"><strong>The Game Changer: AI Memory</strong></h3>
+<p class="whitespace-normal break-words">The real breakthrough is the 🤖 Robot tags. They solve AI's biggest weakness: memory. Its a common issue, when  the task is simply too big for the AI. You give it a broad instruction like “Add validation to the user form” ... and the AI forgets what was already there, or misses key dependencies.</p>
+<p class="whitespace-normal break-words">AIs can use the 🤖 Robot tags to build persistent understanding, essentially giving them a way to extend their memory by tagging and revisiting code.</p>
+
+<div class="relative group/copy rounded-lg">
+<div class="sticky opacity-0 group-hover/copy:opacity-100 top-2 py-2 h-12 w-0 float-right">
+<div class="absolute right-0 h-8 px-2 items-center inline-flex">
+<div class="relative"></div>
+</div>
+</div>
+<div class="text-text-500 text-xs p-3.5 pb-0">javascript</div>
+<div>
+<pre class="code-block__code !my-0 !rounded-lg !text-sm !leading-relaxed"><code class="language-javascript"><span class="token">// [🤖 confidence-low: fieldValidation]</span>
+<span class="token">// This validation is a guess and might need human review</span>
+
+<span class="token">// [🤖 pattern-detected: service-delegation]</span>
+<span class="token">// Detected service pattern; may want to extract interface</span>
+
+<span class="token">// [🤖 agent:security: reviewed: 2025-05-22]</span>
+<span class="token">// No SQL injection risks found</span></code></pre>
+</div>
+</div>
+<p class="whitespace-normal break-words">This lets AI tools build knowledge over time. Even better, multiple AI agents can collaborate through these tags, each adding their insights.</p>
+
+<h3>Why I’m Using It Everywhere</h3>
+<p class="whitespace-normal break-words">This system has already transformed how I work with AI. It's helped me:</p>
+
+<ul class="[&amp;:not(:last-child)_ul]:pb-1 [&amp;:not(:last-child)_ol]:pb-1 list-disc space-y-1.5 pl-7">
+ 	<li class="whitespace-normal break-words">Preserve business logic across AI sessions</li>
+ 	<li class="whitespace-normal break-words">Enable multiple AI agents to collaborate</li>
+ 	<li class="whitespace-normal break-words">Review code with full context</li>
+ 	<li class="whitespace-normal break-words">Build institutional knowledge that persists</li>
+</ul>
+<p class="whitespace-normal break-words">And when I revisit older code, those tags tell the complete story: what's structural, what's important to humans, and what AI has learned.</p>
+
+<h3>Want to Try It?</h3>
+Automotan Tags is open source and designed to be language-agnostic. The full spec is at:
+🔗 https://robokeys.tech/a-practical-framework-for-human-ai-code-collaboration/
+
+Or dive straight into the repo:
+🔗 https://github.com/robokeys/robokeytags
+
+If you’ve ever lost good work to a well-meaning AI then Automotan Tags is for you.
+
+More thoughts like this, and deeper dives into human-AI collaboration, are coming soon. If you're working with AI tools or building dev workflows that use automation, I'd love to connect.
+
+This is just the start of something bigger I'm building.

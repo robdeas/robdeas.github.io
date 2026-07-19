@@ -1,0 +1,296 @@
+<p>Since 2018 Java has used a model of L.T.S. (Long Term Support) releases with short lived interim releases. Before that there were certain key releases that made major changes. I am going to attempt to summarize the changes as its sometimes necessary to show what was implemented in what version of Java,</p>
+
+
+
+<h3 class="wp-block-heading">A Look at Major Java LTS Releases: From Java 1 to Java 21</h3>
+
+
+
+<p>Java has evolved significantly over the years, with each Long-Term Support (LTS) release bringing transformative changes. This post highlights the key features Since java 1 was released in 1996 and the changes from Java 5 to Java 21, focusing on stable features that developers rely on today.</p>
+
+
+
+<h4 class="wp-block-heading">Java 1 (1996): The Beginning</h4>
+
+
+
+<p>The first version of Java, launched in 1996, introduced the core philosophy of "write once, run anywhere," which became its hallmark. Java’s object-oriented nature, along with automatic memory management (garbage collection), and platform independence through the Java Virtual Machine (JVM), set the stage for its widespread adoption. Features like the Abstract Window Toolkit (AWT) and Applets (removed in Java 11) were part of Java’s original offering, making it possible to build cross-platform GUI applications.</p>
+
+
+
+<h4 class="wp-block-heading">Java 5 (2004): A Major Shift</h4>
+
+
+
+<p>Java 5 introduced several key features that modernized Java and made it more developer-friendly. The most significant addition was Generics, which allowed for type-safe code, particularly when working with collections:</p>
+
+
+
+<pre class="wp-block-code"><code>List&lt;String&gt; strings = new ArrayList&lt;String&gt;();
+strings.add("hello");</code></pre>
+
+
+
+<p>This feature reduced the need for manual casting and improved runtime type safety. Other notable features included:</p>
+
+
+
+<p>Enhanced for loop, which simplified iteration over collections:java</p>
+
+
+
+<pre class="wp-block-code"><code>for (String str : strings) {
+
+System.out.println(str);
+
+}</code></pre>
+
+
+
+<div class="is-style-default wp-block-group">
+<p>Annotations, enabling metadata to be embedded in code, useful for frameworks like Spring, JUnit, and code generation</p>
+</div>
+
+
+
+<p>Concurrency utilities (java.util.concurrent), which introduced modern constructs for thread management like ExecutorService.</p>
+
+
+
+<h4 class="wp-block-heading">Java 8 (2014, LTS): Functional Programming Revolution</h4>
+
+
+
+<p>Java 8 was a landmark release that introduced functional programming concepts, making Java more expressive and concise:</p>
+
+
+
+<p>Streams API: This allowed developers to process collections and arrays in a functional manner, reducing the need for boilerplate loops.java</p>
+
+
+
+<pre class="wp-block-code"><code>List&lt;Integer&gt; numbers = Arrays.asList(1, 2, 3, 4, 5);int sum = numbers.stream()
+
+.filter(n -&gt; n % 2 == 0)
+
+.mapToInt(Integer::intValue)
+
+.sum();</code></pre>
+
+
+
+<div class="is-style-plain wp-block-group">
+<p>Lambda Expressions simplified passing behaviors as parameters, significantly reducing boilerplate when working with anonymous classes:java</p>
+</div>
+
+
+
+<pre class="wp-block-code"><code>List&lt;String&gt; names = Arrays.asList("Alice", "Bob", "Carol");
+
+names.forEach(name -&gt; System.out.println(name));</code></pre>
+
+
+
+<p>Optional: This class addressed the notorious null pointer exception by enforcing a more explicit check for absent values.java</p>
+
+
+
+<pre class="wp-block-code"><code>Optional&lt;String&gt; name = Optional.ofNullable(null);
+
+name.ifPresent(System.out::println);</code></pre>
+
+
+
+<p>Date and Time API: improved date/time handling e.g., <code>LocalDate</code>, <code>LocalTime</code>, <code>Duration</code>), meant the end of needing additional date/time libraries.</p>
+
+
+
+<p>Java 8’s functional programming tools, combined with the Date and Time API overhaul, made it a transformative LTS release that many projects still rely on today.</p>
+
+
+
+<h4 class="wp-block-heading">Java 11 (2018, LTS): Modularization and HTTP Client</h4>
+
+
+
+<p>Java 11 continued to refine the language, focusing on modularization and enhancing developer productivity:</p>
+
+
+
+<p>Modules (introduced in Java 9, stabilized here): Modules allowed developers to break their applications into smaller, well-encapsulated components, improving maintainability in large applications.java </p>
+
+
+
+<p><strong>Modularization was a big change though often individual developers don't really notice it. The effect was that many companies moved slowly towards Java 11 and stayed on Java 8 for a long time.</strong></p>
+
+
+
+<pre class="wp-block-code"><code>module com.example.module {
+
+exports com.example.package;
+
+}</code></pre>
+
+
+
+<p>HTTP Client API: A new, simpler, and asynchronous way to make HTTP requests, replacing HttpURLConnection.java</p>
+
+
+
+<pre class="wp-block-code"><code>HttpClient client = HttpClient.newHttpClient();HttpRequest request = HttpRequest.newBuilder(URI.create("https://example.com"))
+
+.build();
+
+HttpResponse&lt;String&gt; response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+System.out.println(response.body());</code></pre>
+
+
+
+<p>New String Methods: String handling became easier with methods like lines(), strip(), and repeat(), simplifying common tasks.java</p>
+
+
+
+<pre class="wp-block-code"><code>String str = " Hello ";
+
+System.out.println(str.strip()); // Removes leading and trailing whitespace</code></pre>
+
+
+
+<p>Java 11 solidified its place as a stable and reliable LTS version, and is in 2024 still often the default for enterprise systems.</p>
+
+
+
+<h4 class="wp-block-heading">Java 17 (2021, LTS): Incremental Improvements</h4>
+
+
+
+<p>Java 17 didn’t bring revolutionary changes, but it focused on improving developer productivity and code clarity:</p>
+
+
+
+<p>Records: These offered a compact syntax for creating classes that are purely data carriers, eliminating boilerplate code.java as they do not require getters and setters as well as implicitly define <code>equals</code>, <code>hashCode</code>, <code>toString</code>.</p>
+
+
+
+<pre class="wp-block-code"><code>public record Point(int x, int y) {}Point p = new Point(1, 2);
+
+System.out.println(p.x()); // Output: 1</code></pre>
+
+
+
+<p>Sealed Classes: These give developers control over inheritance, restricting which classes can extend or implement a class or interface.java</p>
+
+
+
+<p></p>
+
+
+
+<p>public abstract sealed class Shape permits Circle, Square {}public final class Circle extends Shape {}public final class Square extends Shape {}</p>
+
+
+
+<p>Sealed classes provide more flexibility when designing class hierarchies, particularly in domains where exhaustive type handling is required.</p>
+
+
+
+<p><strong>Text Blocks:</strong> Introduced multi-line strings and their benefits.</p>
+
+
+
+<p>Java 17 represents stability and consolidation of recent changes, offering useful features without drastic shifts, making it an LTS release focused on developer ease.</p>
+
+
+
+<p></p>
+
+
+
+<h4 class="wp-block-heading">Java 21 (2023, LTS): Manual Memory Allocation and Concurrency</h4>
+
+
+
+<p>Java 21 brought some big changes to Java's memory management and concurrency model:</p>
+
+
+
+<p>Manual Memory Allocation: This allows developers to manage memory manually, providing more control for performance-critical applications, similar to lower-level languages like C++. This marks a significant departure from Java’s automatic garbage collection model.</p>
+
+
+
+<pre class="wp-block-code"><code>MemorySegment segment = MemorySegment.allocateNative(100);
+
+segment.set(ValueLayout.JAVA_INT, 0, 42);
+
+System.out.println(segment.get(ValueLayout.JAVA_INT, 0));
+
+segment.close(); // Free the memory</code></pre>
+
+
+
+<p>Virtual Threads (Project Loom): Virtual threads make handling concurrency in Java more efficient. These lightweight threads allow you to handle massive numbers of concurrent tasks without the overhead associated with traditional threads.</p>
+
+
+
+<pre class="wp-block-code"><code>try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+
+IntStream.range(0, 10_000).forEach(i -&gt; {
+
+executor.submit(() -&gt; {
+
+Thread.sleep(Duration.ofSeconds(1));
+
+return i;
+
+});
+
+});
+
+}</code></pre>
+
+
+
+<p>Virtual threads decouple concurrency from hardware limitations, making it easier to write scalable applications.</p>
+
+
+
+<p>Sequenced Collections: These new interfaces (like SequencedSet and SequencedMap) bring uniformity to collections that maintain the order of elements, allowing access to first and last elements easily.</p>
+
+
+
+<pre class="wp-block-code"><code>SequencedCollection&lt;Integer&gt; collection = new SequencedLinkedHashSet&lt;&gt;();
+
+collection.addFirst(1);
+
+collection.addLast(2);</code></pre>
+
+
+
+<p>Record Patterns and Pattern Matching for switch: This feature simplifies complex branching logic and makes it easier to decompose objects.</p>
+
+
+
+<pre class="wp-block-code"><code>public void print(Object o) {
+
+switch (o) {
+
+case Position(int x, int y) -&gt; System.out.println("Position: " + x + ", " + y);
+
+default -&gt; System.out.println("Unknown");
+
+}
+
+}</code></pre>
+
+
+
+<p>Java 21 is a robust LTS release that marks a significant shift in memory and concurrency management, alongside a focus on improving developer productivity</p>
+
+
+
+<h4 class="wp-block-heading"><strong>Java 25</strong>, scheduled for <strong>September 2025</strong>.</h4>
+
+
+
+<p>This is the next planned LTS release it is expected to finalize some earlier big changes among other things, but its content is not confirmed in 2024</p>

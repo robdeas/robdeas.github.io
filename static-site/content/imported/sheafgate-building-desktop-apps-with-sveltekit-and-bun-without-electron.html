@@ -1,0 +1,395 @@
+<h1 class="wp-block-heading"></h1>
+
+
+
+<p>I wanted to build a desktop app. I wanted to write it in SvelteKit with Bun. I didn't want Electron.</p>
+
+
+
+<p>That sounds like a contradiction. Web tooling for desktop apps usually means Electron, or Tauri if you're willing to learn Rust, or one of the newer frameworks that all make you choose between "write native code" and "ship 200MB for a hello world." I didn't want any of those trade-offs. I wanted to write pure SvelteKit, use Bun's fast startup times, and have the result feel like a proper desktop application.</p>
+
+
+
+<p>So I built a launcher instead.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">The Problem With Existing Solutions</h2>
+
+
+
+<p><strong>Electron</strong> bundles Chromium and Node.js into every app. It works, it's proven, and GitHub Desktop and VS Code use it. It also means your notes app ships at 150-300MB and takes several seconds to cold-start. For a personal knowledge manager that should feel lightweight and instant, that's wrong.</p>
+
+
+
+<p><strong>Tauri</strong> is the modern alternative, it uses the system webview and Rust for the native layer, which is dramatically smaller. But it requires Rust, it requires learning the Tauri bridge API, and it couples your frontend to the native layer in ways that make standard browser tooling awkward.</p>
+
+
+
+<p><strong>Wails</strong> is the Go equivalent of Tauri. Similar trade-offs.</p>
+
+
+
+<p>These share a fundamental assumption: the web app needs to be wrapped inside a native shell that controls it. I wanted to question that assumption and just use normal TypeScript with full SvelteKit and access to Bun shell commands.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">Bun is fast enough, so lets do things the simple way</h2>
+
+
+
+<p>Bun starts fast. Not just "fast for JavaScript" fast , but genuinely fast. A SvelteKit/Bun app can go from cold process to serving HTTP requests in under two seconds. That's fast enough that you could start it on demand, from a native launcher, every time the user opens the app.</p>
+
+
+
+<p>If the launcher is a small Go binary and the web app is a Bun process, the architecture looks like this:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">┌─────────────────────────┐
+│     Go Launcher         │
+│  ~single binary, thin   │
+│  process supervisor     │
+└──────────┬──────────────┘
+           │ spawns, reads stdout
+           ▼
+┌─────────────────────────┐
+│    Bun/SvelteKit App    │
+│  all business logic     │
+│  standard web tooling   │
+└──────────┬──────────────┘
+           │ HTTP on localhost
+           ▼
+┌─────────────────────────┐
+│  System Default Browser │
+│  full devtools, no shim │
+└─────────────────────────┘
+</pre>
+
+
+
+<p>The Go launcher is dumb on purpose. It spawns the Bun process, waits for a ready signal, opens the browser, and manages the process lifecycle. That's it. No business logic, no file access, no HTTP calls of its own.</p>
+
+
+
+<p>The SvelteKit app is a completely standard SvelteKit app. It runs in the browser. You can debug it with browser devtools. You can develop it with <code>bun dev</code> and a normal browser tab. The launcher is invisible during development.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">The Auth Problem</h2>
+
+
+
+<p>Here's where it gets interesting. If your app is running on <code>localhost:47832</code>, what stops another process,  or another app using the same framework from talking to it?</p>
+
+
+
+<p>On a typical desktop machine, probably nothing. Localhost is usually trusted. But "usually trusted" isn't good enough if you're building a framework that other apps will use. The wrong launcher connecting to the wrong app and sending a shutdown signal, or worse, sending commands that modify data, is a real failure mode. Remember this app uses BUN so the Bun app has all the power a normal user has.</p>
+
+
+
+<p>This is the problem I spent the most time on. The solution has three parts.</p>
+
+
+
+<h3 class="wp-block-heading">Part 1: Build-Time UUID</h3>
+
+
+
+<p>Both the Go launcher and the SvelteKit app are compiled with a shared UUID, injected at build time:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code"></pre>
+
+
+
+<p>The UUID comes from .env files but can generated fresh for each release build. It's baked into both binaries. A launcher will only talk to the app it was built with. If two sheaflauncher apps are running on the same machine, their UUIDs don't match and they can't interfere with each other.</p>
+
+
+
+<h3 class="wp-block-heading">Part 2: Runtime Password</h3>
+
+
+
+<p>The UUID alone proves the launcher is the right launcher for this app. But it doesn't prove the launcher started the Bun process, someone could race to start their own Bun process on the same port.</p>
+
+
+
+<p>So the Go launcher also generates a cryptographically random one-time password on startup and passes it to the Bun process via an environment variable:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code"></pre>
+
+
+
+<p>The Bun app reads this at startup. Until it receives the password, login is impossible - the endpoint returns 503. The password is never written to disk, never passed as a command-line argument (which would be visible in process lists), and is only valid for the lifetime of the process.</p>
+
+
+
+<h3 class="wp-block-heading">Part 3: Session Cookie</h3>
+
+
+
+<p>The login flow is a single HTTP GET:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">GET /sheaflauncher-control?uuid=&lt;build-time-uuid>&amp;password=&lt;runtime-password>
+</pre>
+
+
+
+<p>Both must be correct. If they are, the server creates a session, sets an <code>httpOnly</code> cookie, and redirects to <code>/</code>. All subsequent requests check the session cookie. The password is gone — it was a one-time bootstrap credential.</p>
+
+
+
+<p>The session is an in-memory Set of UUIDs. It clears on restart. No database, no persistence.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">The Launcher Control Endpoint</h2>
+
+
+
+<p>Rather than a dynamic route like <code>/login/[uuid]</code>, the endpoint is a fixed path with the UUID as a query parameter:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">GET  /sheafgate-control?uuid=xxx&amp;password=xxx  → login, set cookie, redirect
+POST /sheafgate-control?uuid=xxx               → heartbeat, returns uptime JSON  
+DELETE /sheafgate-control?uuid=xxx             → clean shutdown
+</pre>
+
+
+
+<p>The Go launcher uses all three. After login it polls the POST endpoint every 5 seconds. If the app crashes and stops responding, the launcher detects it after 3 consecutive failures. On exit it sends the DELETE before killing the process.</p>
+
+
+
+<p>From the app side, the entire launcher-control implementation is a single file that re-exports from a library:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">// src/routes/sheafgate-control/+server.ts
+export { GET, POST, DELETE } from '$lib/sheafgate/launcherControl';
+</pre>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">The SvelteKit Library</h2>
+
+
+
+<p>The auth logic lives in <code>src/lib/sheafgate/</code> — a folder you copy into any SvelteKit app. The consuming app needs exactly three things beyond the library itself:</p>
+
+
+
+<p><strong><code>src/hooks.server.ts</code></strong></p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">import { createHandle } from '$lib/sheaflgate/hooks';
+import { DEV_AUTH_BYPASS } from '$lib/config';
+
+export const handle = createHandle({ devBypass: DEV_AUTH_BYPASS });
+</pre>
+
+
+
+<p><strong><code>src/routes/sheafgate-control/+server.ts</code></strong></p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">export { GET, POST, DELETE } from '$lib/sheafgate/launcherControl';
+</pre>
+
+
+
+<p><strong><code>src/lib/config.ts</code></strong></p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">export const DEV_AUTH_BYPASS = false; // set true for local dev only
+</pre>
+
+
+
+<p>That's the entire integration. The <code>createHandle</code> factory returns a SvelteKit <code>Handle</code> that checks sessions on every request, exempts the launcher-control route and the <code>/login</code> fallback page, and optionally bypasses all auth in dev mode.</p>
+
+
+
+<p>The <code>DEV_AUTH_BYPASS</code> flag is important. During development you want <code>bun dev</code> and browser devtools without the launcher involved. Setting it to <code>true</code> disables all auth. Setting it back to <code>false</code> and rebuilding restores full security. It's an explicit source-level change — visible in diffs, catchable in CI — rather than an environment flag that could be accidentally left on.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">The Ready Signal</h2>
+
+
+
+<p>The final piece is how Go knows Bun is ready. The SvelteKit hooks module outputs a single JSON line to stdout on startup:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">// in src/lib/sheafgate/hooks.ts, runs on module load
+console.log(JSON.stringify({ status: 'ready', port: getPort() }));
+</pre>
+
+
+
+<p>Go reads stdout line by line, looking for a line starting with <code>{</code> that parses as <code>{"status":"ready"}</code>. Everything else is logged but ignored. This gives a 30-second timeout before the launcher gives up and exits with an error.</p>
+
+
+
+<p>The port comes from the <code>--port</code> flag Go passes when spawning Bun. Go picks a random free port in the 47000–48000 range (below the OS ephemeral range, above well-known ports), checks it's available by attempting to bind, and passes it to Bun. The ready signal confirms Bun started cleanly on that port.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">For App Authors</h2>
+
+
+
+<p>The whole point of the framework is that app authors don't think about any of this. They write a standard SvelteKit app. They drop in the <code>sheaflauncher</code> library. They add three thin files. They run <code>make </code>dist and get a Go launcher and a Bun app (with a full build folder containing the minimized pages) that together behave like a native desktop application. I dont use Bun's compile to produce a binary as that doesnt work particularly well with sveltekit.</p>
+
+
+
+<p>The launcher is the only thing the user ever sees. Double-click, browser opens, app is there. No terminal, no Node, no visible Bun. The browser can be the system default, which means full devtools are always available without any setup.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">Authentication Flow: Sequence Diagram</h2>
+
+
+
+<p>The three-part auth handshake is easier to follow as a sequence. This shows the full flow from launcher startup to the user seeing the app:</p>
+
+
+
+<p><img class="wp-image-718" style="width: 800px;" src="uploads/2026/03/sheqaflauncher-auth-flow.jpg" alt="Sheaflauncher auth flow"></p>
+
+
+
+<p></p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code"></pre>
+
+
+
+<h2 class="wp-block-heading">Technical Details</h2>
+
+
+
+<p><strong>Port selection</strong> — the launcher picks a random port in the 47000–48000 range by attempting to bind with <code>net.Listen</code>. The range sits above well-known service ports and below the OS ephemeral range (49152+), making collisions rare on a typical desktop machine. It tries up to 20 ports before giving up.</p>
+
+
+
+<p><strong>Password generation</strong> — <code>crypto/rand</code> reads 16 bytes and formats them as a UUID string. This gives 122 bits of entropy — enough that brute-forcing the endpoint on localhost within the login window is not a realistic attack.</p>
+
+
+
+<p><strong>The 503 window</strong> — between Bun starting and the password being read from the environment there is a small window where the <code>/sheaflauncher-control</code> endpoint returns 503. In practice this window is a few milliseconds. The launcher waits for the ready signal before opening the browser, so the user never sees it.</p>
+
+
+
+<p><strong>Session store</strong> — sessions are held in a <code>Set&lt;string&gt;</code> in process memory. There is no persistence layer. Restarting the Bun process invalidates all sessions, which is the correct behaviour — if the app restarts, the launcher re-authenticates automatically via the heartbeat failure and relaunch flow.</p>
+
+
+
+<p><strong>Heartbeat failure handling</strong> — three consecutive POST failures trigger launcher shutdown. The threshold is intentionally low: a process that has stopped responding to localhost HTTP in 15 seconds is not coming back.</p>
+
+
+
+<p><strong>Shutdown ordering</strong> — the DELETE request gives Bun 100ms to flush anything in flight before <code>process.exit(0)</code>. The launcher then waits 500ms before force-killing the process. On a healthy machine the Bun process will have exited cleanly long before that deadline.</p>
+
+
+
+<p><strong>Why a fixed path, not a dynamic route</strong> — <code>/sheafgate-control</code> is a fixed path rather than <code>/sheafgate-control/[uuid]</code> for a deliberate reason. A dynamic route would appear in SvelteKit's routing layer and could be accidentally matched by catch-all routes in complex apps. A fixed path with the UUID as a query parameter keeps the route unambiguous and easy to exempt in the session middleware.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">What This Isn't</h2>
+
+
+
+<p>This isn't a replacement for Electron or Tauri in all cases. If you need:</p>
+
+
+
+<p></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Native OS APIs</strong> With  file dialogs, notifications, tray icons beyond what Bun can provide.  This would mean you'll need a richer native layer</li>
+
+
+
+<li><strong>App store distribution</strong>  then the launcher pattern doesn't fit app store sandboxing models well</li>
+</ul>
+
+
+
+<p>For a local-first personal tool where the user controls their machine, it's a good fit. The browser is already installed, localhost is available, and Bun's startup time is fast enough that the "native app" illusion holds.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">The Code</h2>
+
+
+
+<p>SheafJournal, the personal knowledge manager built on this framework, is open source at <a href="https://github.com/robdeas/sheafjournal" title="">github.com/robdeas/sheafjournal</a>. but you also need to use its launcher to open it as an application and thats <a href="https://github.com/robdeas/sheafjournallauncher" title="">github.com/robdeas/sheafjournal</a>.  or set environment variables and use it in a browser.</p>
+
+
+
+<p>But for developers wanting to use sheafgate there is a better way The sheaflauncher library has been extracted as a standalone demo package. The demo package contains all you will need to get started you just need to update the app name and the uuids in the settings file and replace the default svelte page with your own site. see <a href="https://github.com/robdeas/sheaflauncherdemo" title="">github.com/robdeas/sheafgatedemo</a>.</p>
+
+
+
+<p>The Go launcher is about 250 lines. The SvelteKit library is four TypeScript files. The total framework overhead for a new app is six files and two build variables.</p>
+
+
+
+<p></p>

@@ -1,0 +1,292 @@
+<h3 class="wp-block-heading"></h3>
+
+
+
+<h3 class="wp-block-heading"><strong>Grep for Structured Code Tags (and AI-Aware Source)</strong></h3>
+
+
+
+<p><strong>Published:</strong> July 3, 2025 <strong>Tags:</strong> code search, dev tools, AI, RobokeyTags, open source, Bun</p>
+
+
+
+<h4 class="wp-block-heading"><strong>Why “Context” in Code Matters - More Than Ever</strong></h4>
+
+
+
+<p>If you’ve ever found yourself endlessly scrolling for TODOs, wondering “where’s that AI refactor suggestion?” or wishing you could grep by meaning and not just plain text, you’ll know the pain that inspired this project.</p>
+
+
+
+<p>In my own projects; and as AI coding assistants get more capable: I found myself needing a new class of tooling:</p>
+
+
+
+<p>Something that lets both humans and bots search for rich, structured context, not just raw code or plain comments.</p>
+
+
+
+<h4 class="wp-block-heading"><strong>Code Comments Aren’t Enough (Not for Humans or AI)</strong></h4>
+
+
+
+<p>Traditional comments are informal and inconsistent.</p>
+
+
+
+<p>A TODO here, a FIXME there, and, increasingly, “AI suggestion”.</p>
+
+
+
+<p>They’re useful, if you can find them. But as teams grow (and bots join the team!), scattered context becomes invisible, and even <code>grep</code> or <code>ripgrep</code> falls short:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Grep finds words, not meanings or regions</li>
+
+
+
+<li>Comments can be duplicated, typo’d, or missed entirely</li>
+
+
+
+<li>AI agents can’t reliably parse intentions from free text</li>
+</ul>
+
+
+
+<h4 class="wp-block-heading"><strong>Enter RoboKeyTags: A Universal Markup for Code Regions</strong></h4>
+
+
+
+<p>So I started developing RoboKeyTags:</p>
+
+
+
+<p>A structured, language-agnostic way to annotate code regions, notes, and intent that uses standardized tags like:</p>
+
+
+
+<p>JavaScript</p>
+
+
+
+<pre class="wp-block-preformatted"><code>[🧩 Section: api/auth]</code>
+<code>...code...</code>
+<code>[/🧩 Section: api/auth]</code>
+
+<code>[📌 Note: refactor] Remove legacy login</code>
+<code>[🤖 Region: ai/suggestion]</code></pre>
+
+
+
+<p>With RoboKeyTags, meaningful context becomes discoverable, both for humans and for LLMs, code agents, or CI tools.</p>
+
+
+
+<h4 class="wp-block-heading"><strong>But How Do You Find All Those Tags? Introducing Puzzlegrep</strong></h4>
+
+
+
+<p>Meet Puzzlegrep! Its a CLI tool to search, filter, and report on RoboKeyTags (and similar) anywhere in your codebase.</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Filter by marker:</strong> Find just human (<code>📌</code>), tool (<code>🧩</code>), or AI (<code>🤖</code>) tags</li>
+
+
+
+<li><strong>Filter by tag-type:</strong> E.g. <code>--tag-type=Note</code> to see only notes</li>
+
+
+
+<li><strong>Pattern-match by path, region, or description</strong></li>
+
+
+
+<li><strong>Output as text or JSON</strong> (for CI, scripts, or bots)</li>
+
+
+
+<li><strong>Language-agnostic:</strong> Works on any source file, any language</li>
+</ul>
+
+
+
+<h4 class="wp-block-heading"><strong>Real-World Examples</strong></h4>
+
+
+
+<p>Find all human-written notes in your codebase:</p>
+
+
+
+<p>Bash</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">bun tools/puzzlegrep/puzzlegrep.js --pin --tag-type=Note "**/*"</pre>
+
+
+
+<p>Find all tool-generated, non-editable regions:</p>
+
+
+
+<p>Bash</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">bun tools/puzzlegrep/puzzlegrep.js --puzzle --tag-type=Region "**/*::NonEditable*"</pre>
+
+
+
+<p>Output every AI suggestion as JSON (for scripting/analytics):</p>
+
+
+
+<p>Bash</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">bun tools/puzzlegrep/puzzlegrep.js --robot --tag-type=Note "**/*" --json</pre>
+
+
+
+<p><strong>Sample output:</strong></p>
+
+
+
+<p>Bash</p>
+
+
+
+<pre class="wp-block-preformatted"><code>dummy/src/a.ts:</code>
+<code>  </code><code>[📌 Note: refactor] → dummy/src/a.ts::refactor</code>
+
+<code>dummy/notes/readme.md:</code>
+<code>  </code><code>[📌 Note: docs] → dummy/notes/readme.md::docs</code></pre>
+
+
+
+<h4 class="wp-block-heading"><strong>How It Works</strong></h4>
+
+
+
+<p>Puzzlegrep scans your files (supports globs/wildcards), finds RobokeyTags blocks, and lets you slice and dice by marker, subtype, path, or text.</p>
+
+
+
+<p>It’s built for speed, hackability, and integration—no dependencies beyond Bun or Node.</p>
+
+
+
+<h2 class="wp-block-heading">Get Started</h2>
+
+
+
+<p><strong>Requirements:</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Recommended:</strong> Use the <a href="https://github.com/robokeys/robokeytags-tools/releases">prebuilt binaries</a> (no other runtime required)</li>
+
+
+
+<li>Or run from source with <strong><a href="https://bun.sh/">Bun</a></strong> (preferred) or <strong>Node.js</strong></li>
+</ul>
+
+
+
+<p><strong>Install/Run:</strong></p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>With prebuilt binary:</strong><br>Download the release for your platform and run: sh CopyEdit <code>./puzzlegrep --help</code></li>
+
+
+
+<li><strong>Or, run from source:</strong> sh CopyEdit <code>git clone https://github.com/robokeys/robokeytags-tools.git</code> <code>cd robokeytags-tools/tools/puzzlegrep</code> <code>bun puzzlegrep.js --help # or: node puzzlegrep.js --help</code></li>
+</ul>
+
+
+
+<p>For full usage docs, see <code><a href="https://github.com/robokeys/robokeytags-tools/blob/main/docs/puzzlegrep.md">puzzlegrep.md</a></code>.</p>
+
+
+
+<h4 class="wp-block-heading"><strong>Why Not Just Use Grep?</strong></h4>
+
+
+
+<p>Because <code>grep</code> (and <code>ripgrep</code>) don’t know about structured meaning, authorship, or region boundaries.</p>
+
+
+
+<p>Puzzlegrep does.</p>
+
+
+
+<p>It finds just the regions you care about! Not every comment or variable. It enables AI and human cooperation, discoverable from the codebase itself.</p>
+
+
+
+<h4 class="wp-block-heading"><strong>What’s Next?</strong></h4>
+
+
+
+<ul class="wp-block-list">
+<li>More CLI tools (tree visualizer, tag stats, IDE integration?)</li>
+
+
+
+<li>Community feedback - PRs, issues, and suggestions very welcome!</li>
+
+
+
+<li>If you want to adopt RobokeyTags or build your own tools, read the spec, or drop me a message.</li>
+</ul>
+
+
+
+<h4 class="wp-block-heading"><strong>Puzzlegrep Is Just the Beginning</strong></h4>
+
+
+
+<p>Puzzlegrep is only the first of many tools and pieces of the puzzle, I’m building for RobokeyTags. My vision is for a whole ecosystem:</p>
+
+
+
+<p>Search, visualization, code analysis, even collaborative code agents, all working together on a foundation of discoverable, structured context.</p>
+
+
+
+<p>I promise to make something special!</p>
+
+
+
+<p>But you don’t have to wait for the future: Puzzlegrep is available right now, and it’s the first step to making RobokeyTags not just a spec, but a living, usable reality in real-world code. Give it a try, and watch this space as more pieces come together!</p>
+
+
+
+<h4 class="wp-block-heading"><strong>Thanks for Reading!</strong></h4>
+
+
+
+<p>If you try Puzzlegrep, let me know how it goes!</p>
+
+
+
+<p>File issues, star the repo, or just send feedback. I’m building this to solve real developer (and future AI) pain.</p>
+
+
+
+<p>Rob Deas <a href="https://robd.tech" title="">robd.tech</a> <a href="https://robokeys.tech" title="">robokeys.tech</a> GitHub: <a href="http://robokeys/robokeytags-tools" title="robokeys/robokeytags-tools">robokeys/robokeytags-tools</a></p>
+
+
+
+<p></p>

@@ -1,0 +1,572 @@
+[
+    {
+        "type":  "page",
+        "title":  "My Open Source Portfolio",
+        "slug":  "my-portfolio",
+        "date":  "2025-09-17",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "Open Source Portfolio I build practical open-source tools for concurrency, security, and developer productivity . These summaries are recruiter and hiring manager friendly. Each card links t...",
+        "hero":  "",
+        "contentFile":  "content/imported/my-portfolio.html"
+    },
+    {
+        "type":  "page",
+        "title":  "Privacy Policy for robd.tech",
+        "slug":  "privacy",
+        "date":  "2025-07-31",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "Last Updated: July 31, 2025 Your privacy is important to us. This Privacy Policy explains what information we collect, how we use it, and how we protect your information when you visit robd....",
+        "hero":  "",
+        "contentFile":  "content/imported/privacy.html"
+    },
+    {
+        "type":  "page",
+        "title":  "Contents",
+        "slug":  "contents",
+        "date":  "2025-04-05",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "🏠 Home 📁 Projects 📰 Blog 🧭 Categories 👨‍💻 About Me ✉️ Contact [display-posts order=\"DESC\" orderby=\"date\" posts_per_page=\"-1\"]",
+        "hero":  "",
+        "contentFile":  "content/imported/contents.html"
+    },
+    {
+        "type":  "page",
+        "title":  "Browse by Topic",
+        "slug":  "categories",
+        "date":  "2025-04-05",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "A developer-focused guide to the writing and projects on this site, grouped by theme. If you arrived here from a specific post and want to explore related work, this is the place to start 💼...",
+        "hero":  "",
+        "contentFile":  "content/imported/categories.html"
+    },
+    {
+        "type":  "page",
+        "title":  "Home",
+        "slug":  "home",
+        "date":  "2025-04-04",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "Rob Deas — Senior Software Engineer, Software Architect \u0026 Open Source Builder I specialize in Java 21–25, Kotlin, Spring Boot, and developer productivity . I build tools for concurrency, sec...",
+        "hero":  "",
+        "contentFile":  "content/imported/home.html"
+    },
+    {
+        "type":  "page",
+        "title":  "Project - Technical Deep Dives",
+        "slug":  "projects",
+        "date":  "2025-04-04",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "Longer reads on the projects in my portfolio. Each post covers the why and how behind a specific piece of work.",
+        "hero":  "",
+        "contentFile":  "content/imported/projects.html"
+    },
+    {
+        "type":  "page",
+        "title":  "Blog",
+        "slug":  "blog",
+        "date":  "2025-04-04",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "",
+        "hero":  "",
+        "contentFile":  "content/imported/blog.html"
+    },
+    {
+        "type":  "page",
+        "title":  "About Me",
+        "slug":  "about",
+        "date":  "2025-04-04",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "Rob Deas Engineer · Writer · Builder of Useful Things I\u0027ve spent over twenty years building backend systems in Java, Kotlin, and whatever the JVM throws at me next. Somewhere along the way I...",
+        "hero":  "",
+        "contentFile":  "content/imported/about.html"
+    },
+    {
+        "type":  "post",
+        "title":  "You Might Be Wondering About SheafGate...",
+        "slug":  "you-might-be-wondering-about-sheafgate",
+        "date":  "2026-03-13",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "After publishing SheafGate: Building Desktop Apps with SvelteKit and Bun, Without Electron , I\u0027ve been thinking about the questions people are likely to have when they first look at the arch...",
+        "hero":  "uploads/2026/03/small-sheafgate2-img.jpg",
+        "contentFile":  "content/imported/you-might-be-wondering-about-sheafgate.html"
+    },
+    {
+        "type":  "post",
+        "title":  "SheafGate: Building Desktop Apps with SvelteKit and Bun, Without Electron",
+        "slug":  "sheafgate-building-desktop-apps-with-sveltekit-and-bun-without-electron",
+        "date":  "2026-03-10",
+        "categories":  [
+                           "Bun",
+                           "Front End",
+                           "Projects"
+                       ],
+        "excerpt":  "I wanted to build a desktop app. I wanted to write it in SvelteKit with Bun. I didn\u0027t want Electron. That sounds like a contradiction. Web tooling for desktop apps usually means Electron, or...",
+        "hero":  "uploads/2026/03/sheaflauncher-picture-small.jpg",
+        "contentFile":  "content/imported/sheafgate-building-desktop-apps-with-sveltekit-and-bun-without-electron.html"
+    },
+    {
+        "type":  "post",
+        "title":  "SheafJournal: A Developer\u0027s Journal App Built the Way I Wanted It",
+        "slug":  "sheafjournal-a-developers-journal-app-built-the-way-i-wanted-it",
+        "date":  "2026-03-10",
+        "categories":  [
+                           "Bun",
+                           "open-source",
+                           "typescript"
+                       ],
+        "excerpt":  "I\u0027ve been using note-taking and journalling apps for years. Like most developers I\u0027ve tried most of them. For a while I settled on a combination of Obsidian and Zim, but neither was quite ri...",
+        "hero":  "uploads/2026/03/small-desk-image.jpg",
+        "contentFile":  "content/imported/sheafjournal-a-developers-journal-app-built-the-way-i-wanted-it.html"
+    },
+    {
+        "type":  "post",
+        "title":  "JSpecify is great for APIs lets handle local nulls too",
+        "slug":  "lets-handle-local-nulls-in-java",
+        "date":  "2026-02-04",
+        "categories":  [
+                           "Java",
+                           "open-source"
+                       ],
+        "excerpt":  "Beyond the Gap: Introducing NotNull4J 0.1.0 Static analysis is a powerful ally in the fight against NullPointerException , but it isn’t a silver bullet. We’ve all seen it: a @NonNull paramet...",
+        "hero":  "uploads/2026/02/small-robot-fixing-hole.jpg",
+        "contentFile":  "content/imported/lets-handle-local-nulls-in-java.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Music Timing Intro: Teaching Rhythm Through Interactive PracticeMusical Note Timing Player",
+        "slug":  "musical-note-timing-player",
+        "date":  "2026-01-06",
+        "categories":  [
+                           "Android",
+                           "Kotlin"
+                       ],
+        "excerpt":  "January 6, 2026 I\u0027m excited to announce the release of Music Timing Intro , an Android app designed to help children (and anyone else!) learn musical rhythm and note timing through hands-on...",
+        "hero":  "uploads/2026/01/music-note-player.jpg",
+        "contentFile":  "content/imported/musical-note-timing-player.html"
+    },
+    {
+        "type":  "post",
+        "title":  "ShellGuard has been renamed RoboShellGuard",
+        "slug":  "shellguard-renamed-to-roboshellguard",
+        "date":  "2025-10-01",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "Renamed ShellGuard to RoboShellGuard to make it easier to find.\n",
+        "hero":  "",
+        "contentFile":  "content/imported/shellguard-renamed-to-roboshellguard.html"
+    },
+    {
+        "type":  "post",
+        "title":  "🛠️ The Cost of Concurrency Interop: Trading Clean Modularity for Shared JVM Efficiency",
+        "slug":  "abcoroutines-jcoroutines-interop",
+        "date":  "2025-10-01",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "\"I pushed the boundaries of Kotlin/Java interop in the same JVM. The result? Technically perfect, but architecturally rigid. Even with a clean stub, direct coupling across subsystems is a ma...",
+        "hero":  "uploads/2025/10/wrecking-bridge.jpg",
+        "contentFile":  "content/imported/abcoroutines-jcoroutines-interop.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Virtual Threads Without the Magic: ABCoroutines for Kotlin",
+        "slug":  "virtual-threads-without-the-magic-abcoroutines-for-kotlin",
+        "date":  "2025-09-29",
+        "categories":  [
+                           "Kotlin",
+                           "open-source",
+                           "Projects"
+                       ],
+        "excerpt":  "The Problem Opportunity Virtual Threads arrived with JDK 21 — promising lightweight concurrency without frameworks. But while they simplify threading, they don\u0027t give you structure. You stil...",
+        "hero":  "uploads/2025/09/robot-race-small.jpg",
+        "contentFile":  "content/imported/virtual-threads-without-the-magic-abcoroutines-for-kotlin.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Over Two Decades of Java Concurrency, and It’s Still a Minefield",
+        "slug":  "java-concurrency-minefield",
+        "date":  "2025-09-23",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "📌 Note: This article was published on Medium and is cross-posted here for completeness. From raw threads in 1996 to java.util.concurrent (2004), lambdas (2014), reactive streams, and virtua...",
+        "hero":  "uploads/2025/09/thread-robotsd-cropped-preview.jpg",
+        "contentFile":  "content/imported/java-concurrency-minefield.html"
+    },
+    {
+        "type":  "post",
+        "title":  "JCoroutines",
+        "slug":  "jcoroutines",
+        "date":  "2025-09-19",
+        "categories":  [
+                           "Java",
+                           "open-source",
+                           "Projects"
+                       ],
+        "excerpt":  "Structured concurrency for the JVM without the magic. Why does concurrency in Java have to be so hard? I asked this in my original announcement post . Now I’m excited to say: JCoroutines 0.1...",
+        "hero":  "uploads/2025/09/thread-robotsd.jpg",
+        "contentFile":  "content/imported/jcoroutines.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Why Does Concurrency Have to Be So Hard in Java After 20 Years?",
+        "slug":  "jcoroutines-intro",
+        "date":  "2025-09-16",
+        "categories":  [
+                           "Java",
+                           "open-source"
+                       ],
+        "excerpt":  "Java has been around for nearly three decades, and we\u0027ve had threads since day one. We got java.util.concurrent in 2004, lambdas in 2014, CompletableFuture improvements, reactive streams, vi...",
+        "hero":  "uploads/2025/09/small-robot-arms-deadlock.jpg",
+        "contentFile":  "content/imported/jcoroutines-intro.html"
+    },
+    {
+        "type":  "post",
+        "title":  "RoboShellGuard: Building an AI-Assisted Command Approval System for SSH Security",
+        "slug":  "shellguard-building-an-ai-assisted-command-approval-system-for-ssh-security",
+        "date":  "2025-07-31",
+        "categories":  [
+                           "AI",
+                           "Developer productivity",
+                           "Kotlin",
+                           "open-source",
+                           "security",
+                           "Technical Articles"
+                       ],
+        "excerpt":  "How we built a real-time command approval system to make AI automation safer . Please note: This is a preview system and more features will be needed before deploying it to production, but i...",
+        "hero":  "uploads/2025/07/evil-robot-laptop-drop-1-small.jpg",
+        "contentFile":  "content/imported/shellguard-building-an-ai-assisted-command-approval-system-for-ssh-security.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Introducing RoboShellGuard: SSH Security for the age of AI",
+        "slug":  "shellguard-ssh-security-for-the-age-of-ai",
+        "date":  "2025-07-28",
+        "categories":  [
+                           "JavaScript",
+                           "Kotlin",
+                           "open-source",
+                           "Projects",
+                           "Spring Boot"
+                       ],
+        "excerpt":  "In a world where AI agents are everywhere SSH security needs a rethink. RoboShellGuard delivers that rethink, For AI-driven systems: RoboShellGuard provides a risk-aware, governed execution...",
+        "hero":  "uploads/2025/07/robot-pc-drop.jpg",
+        "contentFile":  "content/imported/shellguard-ssh-security-for-the-age-of-ai.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Introducing Puzzlegrep:",
+        "slug":  "introducing-puzzlegrep",
+        "date":  "2025-07-03",
+        "categories":  [
+                           "JavaScript",
+                           "open-source",
+                           "Projects"
+                       ],
+        "excerpt":  "Grep for Structured Code Tags (and AI-Aware Source) Published: July 3, 2025 Tags: code search, dev tools, AI, RobokeyTags, open source, Bun Why “Context” in Code Matters - More Than Ever If...",
+        "hero":  "uploads/2025/07/puzzlegrep1small.jpg",
+        "contentFile":  "content/imported/introducing-puzzlegrep.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Lets fix a huge class",
+        "slug":  "lets-fix-a-huge-class",
+        "date":  "2025-06-24",
+        "categories":  [
+                           "Guides and architecture",
+                           "Kotlin",
+                           "open-source",
+                           "Technical Articles"
+                       ],
+        "excerpt":  "How I Refactored VerZanctuary: Staged Releases, Real Lessons Refactoring is often presented as a magic trick—a messy \"before\" and a sparkling \"after.\" But that erases the most valuable part...",
+        "hero":  "uploads/2025/06/chaos-t-order-small.jpg",
+        "contentFile":  "content/imported/lets-fix-a-huge-class.html"
+    },
+    {
+        "type":  "post",
+        "title":  "No more lost code",
+        "slug":  "verzanctuary",
+        "date":  "2025-06-15",
+        "categories":  [
+                           "Developer productivity",
+                           "Kotlin",
+                           "open-source",
+                           "Projects"
+                       ],
+        "excerpt":  "🏛️ Introducing VerZanctuary: A Safe Sanctuary for Your Code Versions Published: June 2025 • Author: Rob Deas 🔥 What Problem Does VerZanctuary Solve? We’ve all been there: Midway through a...",
+        "hero":  "uploads/2025/06/small-verzanctuaary-logo.jpg",
+        "contentFile":  "content/imported/verzanctuary.html"
+    },
+    {
+        "type":  "post",
+        "title":  "The Origin Story of Robokeytags: From Internal Tool to Open Standard",
+        "slug":  "the-origin-story-of-robokeytags-from-internal-tool-to-open-standard",
+        "date":  "2025-05-26",
+        "categories":  [
+                           "AI",
+                           "Technical Articles"
+                       ],
+        "excerpt":  "Sometimes the best solutions come from scratching your own itch. Robokeytags started as a simple internal utility at Robokeys, but evolved into something I believe could transform how we all...",
+        "hero":  "uploads/2025/05/puzzlepins-3.jpg",
+        "contentFile":  "content/imported/the-origin-story-of-robokeytags-from-internal-tool-to-open-standard.html"
+    },
+    {
+        "type":  "post",
+        "title":  "AI will learn to love Emojis",
+        "slug":  "when-ai-overwrites-your-work-why-i-created-a-solution",
+        "date":  "2025-05-23",
+        "categories":  [
+                           "AI",
+                           "Technical Articles"
+                       ],
+        "excerpt":  "When AI Overwrites Your Work: Why I Created Robokeytags A few months ago while I was experimenting with AI agents, I asked an AI assistant to generate a new REST controller in my Spring Boot...",
+        "hero":  "uploads/2025/05/personal-puzzlepins.jpg",
+        "contentFile":  "content/imported/when-ai-overwrites-your-work-why-i-created-a-solution.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Robokeytags: How to stop AI from breaking your code.",
+        "slug":  "how-to-stop-ai-from-breaking-your-code",
+        "date":  "2025-05-22",
+        "categories":  [
+                           "AI",
+                           "Developer productivity",
+                           "open-source"
+                       ],
+        "excerpt":  "Sometimes the biggest productivity boost is just not losing your work. The Frustration You ask an AI assistant to scaffold a new endpoint or component. It does a great job. Weeks later, you...",
+        "hero":  "uploads/2025/05/puzzlepins-1.jpg",
+        "contentFile":  "content/imported/how-to-stop-ai-from-breaking-your-code.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Robokeytags",
+        "slug":  "robokeytags",
+        "date":  "2025-05-20",
+        "categories":  [
+                           "Notebook"
+                       ],
+        "excerpt":  "Robokeytags is a specification I created for Robokeys Ltd It may be so useful in future, lookout for more info. It provides a standard way to embed semantic metadata in source code. I intend...",
+        "hero":  "uploads/2025/05/robokeytags-project-logo-small-no-text.png",
+        "contentFile":  "content/imported/robokeytags.html"
+    },
+    {
+        "type":  "post",
+        "title":  "“Setting Up Tailwind CSS v3 with SvelteKit and Bun (While v4 has issues)”",
+        "slug":  "setting-up-tailwind-css-v3-with-sveltekit-and-bun-while-v4-has-issues",
+        "date":  "2025-04-15",
+        "categories":  [
+                           "Bun",
+                           "Front End",
+                           "JavaScript",
+                           "Sveltekit"
+                       ],
+        "excerpt":  "Introduction SvelteKit offers a fantastic framework for building web applications, and Bun brings incredible speed to the JavaScript ecosystem. Pairing these with the utility-first power of...",
+        "hero":  "uploads/2025/04/white-and-blue-robot-repairing-weindow.jpg",
+        "contentFile":  "content/imported/setting-up-tailwind-css-v3-with-sveltekit-and-bun-while-v4-has-issues.html"
+    },
+    {
+        "type":  "post",
+        "title":  "From Full-Stack Java to SvelteKit: Rethinking the Modern Web App Stack",
+        "slug":  "from-full-stack-java-to-sveltekit-rethinking-the-modern-web-app-stack",
+        "date":  "2025-04-03",
+        "categories":  [
+                           "Technical Articles"
+                       ],
+        "excerpt":  "By robdeas / April 3, 2025 Author’s Perspective I’ve been thinking recently about how modern apps have shifted toward using frameworks like SvelteKit with TypeScript. The idea of building fr...",
+        "hero":  "uploads/2025/04/building-a-bridge-small.jpg",
+        "contentFile":  "content/imported/from-full-stack-java-to-sveltekit-rethinking-the-modern-web-app-stack.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Cut Through the Noise: Better Logging with emoji-logger",
+        "slug":  "cut-through-the-noise-better-logging-with-emoji-logger",
+        "date":  "2025-04-01",
+        "categories":  [
+                           "Kotlin",
+                           "Projects",
+                           "Spring Boot"
+                       ],
+        "excerpt":  "Say Hello to emoji-logger: Expressive Logging for Kotlin and Spring If you\u0027ve ever stared at a wall of identical log lines during debugging and wished your logs could speak more clearly — or...",
+        "hero":  "uploads/2025/03/small-emoji-magnify.jpg",
+        "contentFile":  "content/imported/cut-through-the-noise-better-logging-with-emoji-logger.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Modern Logging: from beyond the JVM",
+        "slug":  "modern-logging-from-beyond-the-jvm",
+        "date":  "2025-04-01",
+        "categories":  [
+                           "Kotlin"
+                       ],
+        "excerpt":  "✨ Modern Logging Lessons from Python, Android \u0026 Beyond: Why server-side Java and Kotlin frameworks should borrow more from modern logging approaches found in other ecosystems. Server-side Ja...",
+        "hero":  "uploads/2025/04/small-logging-dx.jpg",
+        "contentFile":  "content/imported/modern-logging-from-beyond-the-jvm.html"
+    },
+    {
+        "type":  "post",
+        "title":  "SANDCASTLE-AUTH: Authentication for Testing and education.",
+        "slug":  "sandcastle-auth-authentication-for-testing-and-education",
+        "date":  "2025-03-21",
+        "categories":  [
+                           "Java",
+                           "Projects",
+                           "security",
+                           "Spring Boot"
+                       ],
+        "excerpt":  "Introduction Sandcastle Auth is an authentication server designed for testing, debugging, and educational purposes. It provides a Spring Boot-based JWT authentication solution that allows de...",
+        "hero":  "uploads/2025/03/robot-sandcastle-web.jpg",
+        "contentFile":  "content/imported/sandcastle-auth-authentication-for-testing-and-education.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Toolbox: Howto example code",
+        "slug":  "toolbox-howto-example-code",
+        "date":  "2025-03-13",
+        "categories":  [
+                           "Java",
+                           "Programming Languages"
+                       ],
+        "excerpt":  "Introducing my \"Toolbox\" code I will produce examples of common code, this will include code that is often hand crafted at the start of projects.. The code in this project is available at my...",
+        "hero":  "uploads/2025/03/feature-digital-toolbox-big.jpg",
+        "contentFile":  "content/imported/toolbox-howto-example-code.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Code to make real things - 3D printing by numbers.",
+        "slug":  "code-to-make-real-things",
+        "date":  "2025-01-15",
+        "categories":  [
+                           "3d-printing"
+                       ],
+        "excerpt":  "This blog is an introduction to using Python programs to design 3D printable objects. and uses Python Ansible Jupyter Labs Notebooks and CadQuery A lot of program code just affects what is o...",
+        "hero":  "uploads/2025/03/featured-robot-with-3d-printer.jpg",
+        "contentFile":  "content/imported/code-to-make-real-things.html"
+    },
+    {
+        "type":  "post",
+        "title":  "My App becomes a better keyboard",
+        "slug":  "my-app-becomes-a-better-keyboard",
+        "date":  "2024-10-24",
+        "categories":  [
+                           "hardware-automation",
+                           "Kotlin",
+                           "Microcontrollers",
+                           "Projects"
+                       ],
+        "excerpt":  "Its time to meet RoboKey, the open-source tool designed to put powerful keyboard automation within reach. a significant leap forward in transforming an Arduino Due into a \"robot keyboard.\" A...",
+        "hero":  "uploads/2025/03/featured-robot-and-penguin-coming-out-of-monitor.jpg",
+        "contentFile":  "content/imported/my-app-becomes-a-better-keyboard.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Kotlin - Breaking out of the JVM",
+        "slug":  "kotlin-breaking-out-of-the-jvm",
+        "date":  "2024-10-22",
+        "categories":  [
+                           "Guides and architecture",
+                           "Kotlin",
+                           "Technical Articles"
+                       ],
+        "excerpt":  "1. Introduction: Ready to explore the full potential of Kotlin? It\u0027s not just for Java! Kotlin is not limited to the JVM; this article will tell you about many ways Kotlin can talk to other...",
+        "hero":  "uploads/2025/03/featured-chameleon-keyboard.jpg",
+        "contentFile":  "content/imported/kotlin-breaking-out-of-the-jvm.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Simplifying Complex Numbers in Kotlin with Python-like Syntax",
+        "slug":  "simplifying-complex-numbers-in-kotlin-with-python-like-extension-functions-and-kmath",
+        "date":  "2024-10-17",
+        "categories":  [
+                           "Kotlin",
+                           "Projects"
+                       ],
+        "excerpt":  "Complex numbers are essential in many fields. However, working with them in Kotlin can sometimes feel cumbersome due to the lack of built-in support for complex numbers. Since I learned comp...",
+        "hero":  "uploads/2025/03/featured-python-k2-1.jpg",
+        "contentFile":  "content/imported/simplifying-complex-numbers-in-kotlin-with-python-like-extension-functions-and-kmath.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Arduino Due Virtual Keyboard Upgrade: Enhanced Control and Interruptibility",
+        "slug":  "enhancing-the-arduino-due-virtual-keyboard-introducing-interruptible-commands-and-busy-signals",
+        "date":  "2024-10-16",
+        "categories":  [
+                           "Kotlin",
+                           "Microcontrollers"
+                       ],
+        "excerpt":  "In my previous blog post,, I introduced My project where an Arduino Due acted as a virtual keyboard—I called the \"RoboKeyboard\"—controlled by a Kotlin PC program. This setup allowed for keyb...",
+        "hero":  "uploads/2025/03/featured-robot-keyboard-part-2.jpg",
+        "contentFile":  "content/imported/enhancing-the-arduino-due-virtual-keyboard-introducing-interruptible-commands-and-busy-signals.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Developing a Robot Keyboard PC Interface with Kotlin and Arduino",
+        "slug":  "developing-a-robot-keyboard-pc-controller-interface-with-kotlin-and-arduino",
+        "date":  "2024-07-11",
+        "categories":  [
+                           "Kotlin",
+                           "Microcontrollers",
+                           "Programming Languages"
+                       ],
+        "excerpt":  "In this post, I will walk you through the user interface and related parts of interesting project I developed: a Robot Keyboard PC Controller Interface. This interface uses an Arduino to emu...",
+        "hero":  "uploads/2025/03/featured-robot-typing.jpg",
+        "contentFile":  "content/imported/developing-a-robot-keyboard-pc-controller-interface-with-kotlin-and-arduino.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Arduino Robot Keyboard with an old Arduino Due",
+        "slug":  "arduino-robot-keyboard",
+        "date":  "2024-07-04",
+        "categories":  [
+                           "Kotlin",
+                           "Microcontrollers",
+                           "Programming Languages"
+                       ],
+        "excerpt":  "Using StreamDeck on Linux via a Windows Machine: A DIY Solution As a fan of the StreamDeck macro keypad, I wanted to extend its functionality to my Linux setup. Officially, StreamDeck doesn\u0027...",
+        "hero":  "uploads/2025/03/featured-robot-and-penguin.jpg",
+        "contentFile":  "content/imported/arduino-robot-keyboard.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Java LTS versions evolution - 20 years since the first big change",
+        "slug":  "java-lts-versions-evolution",
+        "date":  "2024-07-04",
+        "categories":  [
+                           "Java",
+                           "Programming Languages"
+                       ],
+        "excerpt":  "Since 2018 Java has used a model of L.T.S. (Long Term Support) releases with short lived interim releases. Before that there were certain key releases that made major changes. I am going to...",
+        "hero":  "uploads/2025/03/featured-coffee-bean-sprouts.jpg",
+        "contentFile":  "content/imported/java-lts-versions-evolution.html"
+    },
+    {
+        "type":  "post",
+        "title":  "Exploring AntBuilder with Groovy - a simple automation tool",
+        "slug":  "exploring-antbuilder-with-groovy",
+        "date":  "2024-07-02",
+        "categories":  [
+                           "Groovy",
+                           "Projects"
+                       ],
+        "excerpt":  "In this post, I’ll walk you through an intriguing Groovy script that I wrote as part of a proof of concept. This script leverages the powerful AntBuilder to transform a custom .antcmd file i...",
+        "hero":  "uploads/2024/07/antbuilder.webp",
+        "contentFile":  "content/imported/exploring-antbuilder-with-groovy.html"
+    }
+]

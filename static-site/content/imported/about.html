@@ -1,0 +1,173 @@
+<style>
+  .ab-container{max-width:720px;margin:0 auto;padding:0 1rem}
+  .ab-section{padding:2rem 0 1.5rem}
+  .ab-section--first{padding-top:0}
+  .ab-divider{border:none;border-top:1px solid #e5e5e5;margin:0}
+  .ab-name{font-size:clamp(1.5rem,2.5vw,1.875rem);font-weight:700;margin:0 0 .25rem}
+  .ab-tagline{font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#999;margin:0 0 1.5rem}
+  .ab-p{font-size:1rem;line-height:1.75;color:#333;margin:0 0 .9rem}
+  .ab-p:last-child{margin-bottom:0}
+  .ab-h2{font-size:1.125rem;font-weight:700;color:#111;margin:0 0 .85rem}
+  .ab-actions{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1.25rem}
+  .ab-btn{font-size:.875rem;padding:.4rem 1rem;border:1px solid #cfcfcf;border-radius:9999px;color:#333;text-decoration:none;background:#fff;transition:all .15s}
+  .ab-btn:hover{border-color:#999;background:#f5f5f5}
+
+  /* Open source table */
+  .ab-table{width:100%;border-collapse:collapse;font-size:.875rem;margin-top:.5rem}
+  .ab-table th{text-align:left;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#999;padding:0 1rem .6rem 0;border-bottom:1px solid #e5e5e5}
+  .ab-table td{padding:.65rem 1rem .65rem 0;border-bottom:1px solid #f0f0f0;vertical-align:top;color:#333;line-height:1.45}
+  .ab-table tr:last-child td{border-bottom:none}
+  .ab-table td:first-child{font-weight:600;white-space:nowrap}
+  .ab-table td.ab-td-desc{color:#555}
+  .ab-table td.ab-td-tech{color:#888;font-size:.8rem;white-space:nowrap}
+
+  /* Interest cards */
+  .ab-interests{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.6rem;margin-top:.5rem}
+  .ab-interest{background:#f9f9f9;border:1px solid #e5e5e5;border-radius:10px;padding:.75rem 1rem}
+  .ab-interest-title{font-size:.8rem;font-weight:700;color:#111;margin:0 0 .2rem}
+  .ab-interest-desc{font-size:.78rem;color:#666;line-height:1.5;margin:0}
+
+  /* Connect links */
+  .ab-connect{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem}
+  .ab-connect-link{font-size:.875rem;padding:.4rem 1rem;border:1px solid #cfcfcf;border-radius:9999px;color:#333;text-decoration:none;background:#fff;transition:all .15s}
+  .ab-connect-link:hover{border-color:#999;background:#f5f5f5}
+</style>
+
+<div class="ab-container">
+
+  <section class="ab-section ab-section--first">
+    <h1 class="ab-name">Rob Deas</h1>
+    <p class="ab-tagline">Engineer &middot; Writer &middot; Builder of Useful Things</p>
+
+    <p class="ab-p">I've spent over twenty years building backend systems in Java, Kotlin, and whatever the JVM throws at me next. Somewhere along the way I discovered that explaining things well is just as satisfying as building them.</p>
+
+    <p class="ab-p">That's the thread running through everything I do now: open-source libraries published to Maven Central, technical posts on medium, dev.to and LinkedIn, and side projects that exist partly because I needed them, and partly because writing about them forces me to understand them properly.</p>
+
+    <p class="ab-p">My background is a little unusual. I came to software through electronics and physics, picked up database systems along the way, and ended up specialising in the JVM on topics such as concurrency, memory, security, and the unglamorous plumbing that keeps production systems honest. These days I'm particularly interested in the infrastructure and tooling layer around AI/LLM systems, where good engineering communication is genuinely scarce.</p>
+
+    <p class="ab-p">I'm currently open to roles where I can do both: build things and help developers understand them.</p>
+
+    <div class="ab-actions">
+      <a class="ab-btn" href="https://www.linkedin.com/in/robdeas/" target="_blank" rel="noopener">🔗 LinkedIn</a>
+      <a class="ab-btn" href="https://github.com/robdeas" target="_blank" rel="noopener">💻 GitHub</a>
+      <!--<a class="ab-btn" href="uploads/Rob_Deas-Profile.pdf">📄 Download CV</a>-->
+    </div>
+  </section>
+
+  <hr class="ab-divider">
+
+  <section class="ab-section">
+    <h2 class="ab-h2">The Architecture of My Approach</h2>
+
+    <p class="ab-p">Most software engineers come from computer science. I came in via electronics, physics, and signal processing before working my way up through databases and distributed systems.</p>
+
+    <p class="ab-p">That path turned out to be useful. When you've spent time thinking about hardware constraints, you develop a different instinct for where abstractions leak. When you've modelled data at the schema level, you ask different questions about state. I didn't plan this curriculum; it just happened to build a fairly unusual mental stack.</p>
+
+    <p class="ab-p">It also means I'm genuinely comfortable explaining things across levels. Whether I'm talking to a junior engineer about thread lifecycle or to a CTO about storage trade-offs in a local-first app, I try to find the right layer of abstraction for the person in front of me rather than one that makes me sound impressive.</p>
+
+    <p class="ab-p">That's the skill I most want to keep exercising. Not just building things, but helping people understand them.</p>
+  </section>
+
+  <hr class="ab-divider">
+
+  <section class="ab-section">
+    <h2 class="ab-h2">The "Working Notebook" Philosophy</h2>
+    <p class="ab-p">I build practical tools that solve real problems. They are often published to Maven Central, documented here, and used on production projects. Sometimes I may want to publish work that doesn't work perfectly the first time; that's the point of a notebook. Don't worry I will warn you if I post something broken.</p>
+	<p class="ab-p">This site is an explanation of real published software as well as a record of experiments, hard-won lessons, and technical deep dives.</p>
+  </section>
+
+  <hr class="ab-divider">
+
+  <section class="ab-section">
+    <h2 class="ab-h2">Notable Open Source</h2>
+    <table class="ab-table">
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Focus</th>
+          <th>Stack</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>JCoroutines</td>
+          <td class="ab-td-desc">Structured concurrency for the modern era</td>
+          <td class="ab-td-tech">Java 21+ / Virtual Threads</td>
+        </tr>
+        <tr>
+          <td>NotNull4J</td>
+          <td class="ab-td-desc">Runtime null-safety extending JSpecify at trust boundaries</td>
+          <td class="ab-td-tech">Java / Maven Central</td>
+        </tr>
+        <tr>
+          <td>ABCoroutines</td>
+          <td class="ab-td-desc">Structured concurrency for Kotlin on Java 21</td>
+          <td class="ab-td-tech">Kotlin / Virtual Threads</td>
+        </tr>
+        <tr>
+          <td>VerZanctuary</td>
+          <td class="ab-td-desc">CLI for safe code snapshots in AI-assisted workflows</td>
+          <td class="ab-td-tech">Kotlin</td>
+        </tr>
+        <tr>
+          <td>SheafGate</td>
+          <td class="ab-td-desc">A pattern for SvelteKit/Bun desktop apps without Electron</td>
+          <td class="ab-td-tech">SvelteKit / Bun / Go</td>
+        </tr>
+        <tr>
+          <td>Sandcastle-Auth</td>
+          <td class="ab-td-desc">Auth server with robust token governance</td>
+          <td class="ab-td-tech">Spring Boot / Kotlin</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr class="ab-divider">
+
+  <section class="ab-section">
+    <h2 class="ab-h2">Technical Interests &amp; Expertise</h2>
+    <div class="ab-interests">
+      <div class="ab-interest">
+        <p class="ab-interest-title">Modern Concurrency</p>
+        <p class="ab-interest-desc">Virtual threads, structured concurrency, Kotlin coroutines</p>
+      </div>
+      <div class="ab-interest">
+        <p class="ab-interest-title">AI/LLM Workflows</p>
+        <p class="ab-interest-desc">Safety tooling and infrastructure around AI-assisted coding</p>
+      </div>
+      <div class="ab-interest">
+        <p class="ab-interest-title">Secure Microservices</p>
+        <p class="ab-interest-desc">Hardened backend architecture with Spring Boot and PostgreSQL</p>
+      </div>
+      <div class="ab-interest">
+        <p class="ab-interest-title">Modern Web</p>
+        <p class="ab-interest-desc">Server-side rendering with htmx/Qute and local-first apps with SvelteKit</p>
+      </div>
+      <div class="ab-interest">
+        <p class="ab-interest-title">Hardware Integration</p>
+        <p class="ab-interest-desc">Automation workflows via microcontrollers and custom firmware</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="ab-divider">
+
+  <section class="ab-section">
+    <h2 class="ab-h2">Let's Connect</h2>
+    <p class="ab-p">I regularly cross-post technical content to Medium, dev.to and LinkedIn, reaching thousands of developers. If you're hiring for a role that needs deep JVM expertise, open-source credibility, and someone who can articulate complex concepts to a developer audience — I'd love to talk.</p>
+    <div class="ab-connect">
+      <a class="ab-connect-link" href="/portfolio">Portfolio</a>
+      <a class="ab-connect-link" href="https://www.linkedin.com/in/robdeas/" target="_blank" rel="noopener">LinkedIn</a>
+      <a class="ab-connect-link" href="https://github.com/robdeas" target="_blank" rel="noopener">GitHub</a>
+      <a class="ab-connect-link" href="https://dev.to/rob_d" target="_blank" rel="noopener">dev.to</a>
+    </div>
+  </section>
+
+</div>
+
+
+
+<p></p>
+
+

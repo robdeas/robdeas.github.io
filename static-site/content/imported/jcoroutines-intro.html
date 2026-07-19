@@ -1,0 +1,375 @@
+<h1 class="wp-block-heading"></h1>
+
+
+
+<p>Java has been around for nearly three decades, and we've had threads since day one. We got <code>java.util.concurrent</code> in 2004, lambdas in 2014, CompletableFuture improvements, reactive streams, virtual threads in 2023… and yet, writing correct concurrent code in Java still feels like navigating a minefield.</p>
+
+
+
+<p>Why is this still so hard?</p>
+
+
+
+<h2 class="wp-block-heading">The Problem: Too Many Half-Solutions</h2>
+
+
+
+<p>Let's look at a simple scenario: fetch data from three APIs concurrently, process the results, and handle errors gracefully.</p>
+
+
+
+<h3 class="wp-block-heading">The Thread Approach (circa 1995)</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">public List&lt;String> fetchData() {
+    List&lt;String> results = Collections.synchronizedList(new ArrayList&lt;>());
+    CountDownLatch latch = new CountDownLatch(3);
+
+    Thread t1 = new Thread(() -> {
+        try {
+            results.add(callApi("api1"));
+        } catch (Exception e) {
+            // How do we handle this? Log? Ignore? Set some flag?
+        } finally {
+            latch.countDown();
+        }
+    });
+
+    Thread t2 = new Thread(() -> { /* ... copy paste ... */ });
+    Thread t3 = new Thread(() -> { /* ... copy paste ... */ });
+
+    t1.start(); t2.start(); t3.start();
+
+    try {
+        latch.await(10, TimeUnit.SECONDS); // What if it times out?
+    } catch (InterruptedException e) {
+        // Now what? Cancel the threads? How?
+    }
+
+    return results; // Hope for the best!
+}</pre>
+
+
+
+<p>Problems: Manual lifecycle management, no error propagation, cancellation is nearly impossible, resource leaks.</p>
+
+
+
+<h3 class="wp-block-heading">The ExecutorService Approach (circa 2004)</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">public List&lt;String> fetchData() {
+    ExecutorService executor = Executors.newFixedThreadPool(3);
+    try {
+        List&lt;Future&lt;String>> futures = List.of(
+            executor.submit(() -> callApi("api1")),
+            executor.submit(() -> callApi("api2")),
+            executor.submit(() -> callApi("api3"))
+        );
+
+        List&lt;String> results = new ArrayList&lt;>();
+        for (Future&lt;String> future : futures) {
+            try {
+                results.add(future.get(10, TimeUnit.SECONDS));
+            } catch (TimeoutException e) {
+                // Cancel remaining? How do we know which ones?
+                future.cancel(true);
+            }
+        }
+        return results;
+    } finally {
+        executor.shutdown();
+        // But what if tasks are still running?
+        executor.awaitTermination(5, TimeUnit.SECONDS);
+        executor.shutdownNow(); // Fingers crossed
+    }
+}</pre>
+
+
+
+<p>Better, but still: complex lifecycle management, unclear error handling, timeout handling is manual.</p>
+
+
+
+<h3 class="wp-block-heading">The CompletableFuture Approach (circa 2014)</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">public CompletableFuture&lt;List&lt;String>> fetchData() {
+    CompletableFuture&lt;String> f1 = CompletableFuture.supplyAsync(() -> callApi("api1"));
+    CompletableFuture&lt;String> f2 = CompletableFuture.supplyAsync(() -> callApi("api2"));
+    CompletableFuture&lt;String> f3 = CompletableFuture.supplyAsync(() -> callApi("api3"));
+
+    return CompletableFuture.allOf(f1, f2, f3)
+        .thenApply(v -> List.of(f1.join(), f2.join(), f3.join()))
+        .orTimeout(10, TimeUnit.SECONDS)
+        .exceptionally(throwable -> {
+            // One failed, but which ones are still running?
+            // How do we cancel them?
+            return List.of();
+        });
+}</pre>
+
+
+
+<p>Cleaner, but: no structured concurrency, cancellation is still unclear, error handling is awkward.</p>
+
+
+
+<h3 class="wp-block-heading">The Virtual Threads Approach (circa 2023)</h3>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">public List&lt;String> fetchData() {
+    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+        var futures = List.of(
+            executor.submit(() -> callApi("api1")),
+            executor.submit(() -> callApi("api2")),
+            executor.submit(() -> callApi("api3"))
+        );
+
+        return futures.stream()
+            .map(future -> {
+                try {
+                    return future.get(10, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            })
+            .toList();
+    }
+}</pre>
+
+
+
+<p>Better performance, but we still have the same fundamental problems: no automatic cancellation, unclear error boundaries, manual timeout handling.</p>
+
+
+
+<h2 class="wp-block-heading">What's Wrong With This Picture?</h2>
+
+
+
+<p>After over 20 years, we're still dealing with the same fundamental issues:</p>
+
+
+
+<h3 class="wp-block-heading">1. <strong>No Structured Concurrency</strong></h3>
+
+
+
+<p>When you launch concurrent operations, there's no clear parent-child relationship. If the parent operation is cancelled or fails, the children keep running. This leads to resource leaks and zombie tasks.</p>
+
+
+
+<h3 class="wp-block-heading">2. <strong>Cancellation is an Afterthought</strong></h3>
+
+
+
+<p>Cancellation in Java is based on thread interruption, which is:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Unreliable (not all blocking operations respect it)</li>
+
+
+
+<li>Unclear (checked in some places, ignored in others)</li>
+
+
+
+<li>Dangerous (can leave resources in inconsistent states)</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">3. <strong>Error Handling is Ad-Hoc</strong></h3>
+
+
+
+<p>When one of your concurrent operations fails, what happens to the others? There's no consistent pattern for error propagation or cleanup.</p>
+
+
+
+<h3 class="wp-block-heading">4. <strong>Resource Management is Manual</strong></h3>
+
+
+
+<p>You're always thinking about: Did I shut down the executor? Are there still running tasks? What if I forget to call <code>close()</code>?</p>
+
+
+
+<h3 class="wp-block-heading">5. <strong>Context is Lost</strong></h3>
+
+
+
+<p>There's no standard way to pass context (like cancellation tokens, timeouts, or tracing information) through your async operations.</p>
+
+
+
+<h3 class="wp-block-heading">6. <strong>People cut corners</strong></h3>
+
+
+
+<p>As this is so complex and because people dont fully understand the complexity of concurrency they cut corners. This means that threading code not using heavier weight frameworks tends to leak resources.</p>
+
+
+
+<h2 class="wp-block-heading">Other Languages Got This Right</h2>
+
+
+
+<p>Meanwhile, other languages learned from these mistakes:</p>
+
+
+
+<p><strong>Go</strong> has structured concurrency built-in with goroutines and context cancellation:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+
+// All goroutines inherit the context and are cancelled together</pre>
+
+
+
+<p><strong>Kotlin</strong> coroutines provide structured concurrency by default:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">runBlocking {
+    val results = listOf("api1", "api2", "api3").map { api ->
+        async { callApi(api) }
+    }.awaitAll()
+    // If this scope is cancelled, all children are automatically cancelled
+}</pre>
+
+
+
+<p><strong>C#</strong> has had similar patterns with Tasks and CancellationTokens for years.</p>
+
+
+
+<h2 class="wp-block-heading">The Mental Model Problem</h2>
+
+
+
+<p>The deeper issue is that Java's concurrency primitives force you to think about <strong>mechanisms</strong> instead of <strong>intent</strong>:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Instead of "run these 3 things concurrently and collect results," you think about threads, executors, futures, and cleanup</li>
+
+
+
+<li>Instead of "cancel this operation and all its children," you think about interruption flags and resource management</li>
+
+
+
+<li>Instead of "handle errors from any child operation," you think about exception wrapping and CompletableFuture combinators</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">What We Actually Want</h2>
+
+
+
+<p>Here's what the same operation should look like:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">try (var scope = new CoroutineScope()) {
+    var results = List.of("api1", "api2", "api3").stream()
+        .map(api -> scope.async(suspend -> callApi(suspend, api)))
+        .map(handle -> handle.join())
+        .toList();
+    return results;
+} // Everything is automatically cancelled and cleaned up</pre>
+
+
+
+<p>This is:</p>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Structured</strong>: Clear parent-child relationships with automatic cleanup</li>
+
+
+
+<li><strong>Cancellable</strong>: The <code>suspend</code> context can be cancelled cooperatively</li>
+
+
+
+<li><strong>Resource-safe</strong>: The try-with-resources ensures everything is cleaned up</li>
+
+
+
+<li><strong>Error-transparent</strong>: Exceptions propagate naturally without special handling</li>
+</ul>
+
+
+
+<h2 class="wp-block-heading">Enter JCoroutines</h2>
+
+
+
+<p>Concurrency should feel like an elevator (lift): press a few clear buttons and trust the machinery. JCoroutines provides the control panel; not a whole new building.</p>
+
+
+
+<p>I built JCoroutines because I was tired of fighting Java's concurrency primitives. It's a simple concurrency framework designed around three core principles:</p>
+
+
+
+<h3 class="wp-block-heading">1. Structured Concurrency by Default</h3>
+
+
+
+<p>Every async operation has a clear parent. When the parent is done, children are automatically cancelled.</p>
+
+
+
+<h3 class="wp-block-heading">2. Explicit Context Passing</h3>
+
+
+
+<p>Instead of hidden thread-local state, everything gets an explicit <code>SuspendContext</code> that carries cancellation, timeouts, and scheduling.</p>
+
+
+
+<h3 class="wp-block-heading">3. No Magic</h3>
+
+
+
+<p>Unlike Kotlin coroutines with their compiler transformations, everything in JCoroutines is explicit. You can see exactly what's happening.</p>
+
+
+
+<h2 class="wp-block-heading">The Path Forward</h2>
+
+
+
+<p>Java is slowly moving in the right direction. JEP 428 (Structured Concurrency) and JEP 446 (Scoped Values) show that the platform team recognizes these problems. But they're taking a very conservative approach, and it'll be years before we have a complete solution.</p>
+
+
+
+<p>In the meantime, we don't have to suffer. Libraries like JCoroutines can provide structured concurrency patterns today, using the Java we have right now.</p>
+
+
+
+<p>The question isn't whether Java will eventually get this right. The question is: how much time do you want to spend fighting your tools instead of solving your actual problems?</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><em>JCoroutines brings structured concurrency to any JVM project today, you get some of the features of Kotlin, without using Kotlin, for when you need to use just Java. No compiler plugins, no bytecode manipulation, just clean APIs built on Virtual Threads and explicit context passing. <a href="https://github.com/robdeas/jcoroutines" title="">Try it out</a> and see what concurrent Java code could feel like.</em></p>

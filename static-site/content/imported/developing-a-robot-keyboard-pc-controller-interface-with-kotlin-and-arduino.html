@@ -1,0 +1,291 @@
+<p>In this post, I will walk you through the user interface and related parts of interesting project I developed: a Robot Keyboard PC Controller Interface. This interface uses an Arduino to emulate a virtual keyboard and a Kotlin client for communication. The primary aim is to provide a cross-platform solution that works on Windows, with potential compatibility for other operating systems.</p>
+
+
+
+<h4 class="wp-block-heading">Project Overview</h4>
+
+
+
+<p>The full project consists of two main components:</p>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Arduino Sketch</strong>: Emulates a virtual keyboard.</li>
+
+
+
+<li><strong>Kotlin Client</strong>: Connects to the Arduino via serial communication, sending data from the PC. It supports both command-line and GUI interfaces for user interaction. The simple GUI interface is shown below.</li>
+</ol>
+
+
+
+<figure class="wp-block-image size-large"><img src="uploads/2024/07/robokey-UI-1024x572.jpg" alt="User interface GUI image, There is also a command line interface,." class="wp-image-82"/></figure>
+
+
+
+<h4 class="wp-block-heading">Key Features</h4>
+
+
+
+<ul class="wp-block-list">
+<li><strong>Serial Communication</strong>: Connects a Windows PC to an Arduino Due using serial communication.</li>
+
+
+
+<li><strong>File Watching</strong>: Monitors a file for commands, making it compatible with the StreamDeck interface and AutoHotkey scripts for enhanced flexibility.</li>
+
+
+
+<li><strong>Local Typing</strong>: Uses Java’s AWT Robot to simulate typing on the local machine, useful for testing purposes.</li>
+</ul>
+
+
+
+<p></p>
+
+
+
+<h4 class="wp-block-heading">Reasons for choices</h4>
+
+
+
+<p>I want to be able to test it from end to end, and also control the Arduino, or the pc to which it is pretending to be a keyboard if something goes wrong, so It has a simple user interface, both command line and GUI.</p>
+
+
+
+<p>Also to help test out the virtual keyboard I decided it would be useful if it could type on the local machine too, (note that this local machine keyboard is a simplified version of the Arduino that does not support all functionality, it would be possible to extend it but I really have no need to. The local keyboard typing uses Java’s AWT Robot, and for this reason I chose Swing for the GUI. The AWT Robot can type into other applications, unlike some more modern choices. AWT robot is well supported on Microsoft Windows but may not be well supported elsewhere, particularly on Linux.</p>
+
+
+
+<h4 class="wp-block-heading">Configuration</h4>
+
+
+
+<p>The project is configured using a <code>application.yaml</code> file:</p>
+
+
+
+<pre class="wp-block-preformatted"><code>application.yaml<br>spring:<br>  application:<br>    name: robokey<br>server:<br>  port: 8080  # Port for the REST controller<br>  error:<br>    whitelabel:<br>      enabled: false<br>app:<br>  consoleCommands: true<br>  gui: true<br>  darkMode: false<br>  mode: PHYSICAL<br>  comPort: COM4<br>  logFilePath: logs/dummy.log<br>  keyboard:<br>    allJitter: true<br>    output: true<br>    uiExtraDelay: true<br>    initialDelay: 3000<br>    press:<br>      jitter: false<br>      jitterMax: 100<br>      time: 100<br>    delay:<br>      jitter: false<br>      jitterMax: 300<br>      time: 300<br>  pipe:<br>    useOsPipe: true<br>    unixPath: /tmp/robo_keyboard_named_pipe<br>  fileWatcher:<br>    enabled: true<br>    winfilePath: "C:\\data\\robo_keyboard_commands.txt"<br>    posixFilePath: /tmp/robo_keyboard_commands.txt<br>    createFile: true<br>    charset: UTF-8<br>    fallBackCharset: UTF-8<br></code></pre>
+
+
+
+<h4 class="wp-block-heading">Code Highlights</h4>
+
+
+
+<p><strong>Modern Look and Feel with FlatLaf</strong>: I used the FlatLaf library to provide a modern look to the Swing GUI.</p>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<pre class="wp-block-code"><code><code>implementation("com.formdev:flatlaf:3.4.1")</code></code></pre>
+
+
+
+<p><strong>Serial Communication with PureJavaComm</strong>: For serial communication, I used the PureJavaComm library.</p>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<pre class="wp-block-code"><code><code>implementation("com.github.purejavacomm:purejavacomm:1.0.1.RELEASE")</code></code></pre>
+
+
+
+<p><strong>Opening Serial Port</strong>: Here's how I open and manage the serial port communication, I use coroutines to allow me to read and write at the same time:</p>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<pre class="wp-block-code"><code>val portId = CommPortIdentifier.getPortIdentifier(portName)
+if (portId.isCurrentlyOwned) {
+    if (commPort != null) {
+        println("Using existing serial connection.")
+    } else {
+        println("Error: Port is currently in use")
+        return
+    }
+} else {
+    commPort = portId.open("SerialPortApp", 2000) as SerialPort
+    commPort?.setSerialPortParams(
+        9600,  // Baud rate
+        SerialPort.DATABITS_8,
+        SerialPort.STOPBITS_1,
+        SerialPort.PARITY_NONE
+    )
+    out = commPort?.outputStream
+    `in` = commPort?.inputStream
+}
+scope.launch {
+    readFromSerialPort()
+}</code></pre>
+
+
+
+<p></p>
+
+
+
+<p><strong>Local Typing with AWT Robot</strong>: To simulate typing on the local machine:</p>
+
+
+
+<pre class="wp-block-code"><code><code>val robot = Robot()
+text.forEach { char ->
+    when (char) {
+        '\n' -> {
+            if (appConfig.keyboard.output) {
+                robot.keyPress(KeyEvent.VK_ENTER)
+                Thread.sleep(50)
+                robot.keyRelease(KeyEvent.VK_ENTER)
+            } else {
+                print("KeyEvent.VK_ENTER, ")
+            }
+        }</code>
+// ... rest of code<code>
+    }</code>
+// ... rest of code<code>
+}</code></code></pre>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<p><strong>Spring Boot Application</strong>: The application is a Spring Boot application with both GUI and command-line interfaces. I used a TaskPool to allow me to execute multiple threads as some were unsuitable to be coroutines. I try to handle clean shutdown be sending each task a cancel message in my ThreadPoolManager , after which I can try to shutdown the thread pool cleanly and if that fails force it. This code has to set headless to false very early, it also does it more than once for safety.</p>
+
+
+
+<pre class="wp-block-code"><code>@SpringBootApplication
+class RobokeyApplication(
+    val appConfig: AppConfig,
+    private val swingMainWindow: SwingMainWindow,
+    private val consoleCommandHandler: ConsoleCommandHandler,
+    private val namedPipeCommandHandler: NamedPipeCommandHandler,
+    private val fileMonitorCommandHandler: FileMonitorCommandHandler,
+    private val taskPoolManager: TaskPoolManager
+) {
+    @Bean
+    fun runOnStartup() = ApplicationRunner {
+        if (!GraphicsEnvironment.isHeadless()) {
+            swingMainWindow.createAndShowGUI()
+        }
+        if (appConfig.consoleCommands) {
+            taskPoolManager.submitTask(TaskName.CONSOLE_COMMANDS) { consoleCommandHandler.start() }
+        }
+        if (appConfig.pipe.useOsPipe &amp;&amp; !System.getProperty("os.name").lowercase(Locale.getDefault()).contains("win")) {
+            taskPoolManager.submitTask(TaskName.PIPES) { namedPipeCommandHandler.start() }
+        }
+        if (appConfig.fileWatcher.enabled) {
+            taskPoolManager.submitTask(TaskName.FILE_MONITOR) { fileMonitorCommandHandler.start() }
+        }
+    }
+// ... rest of code 
+@PreDestroy
+    fun shutdown() {
+        taskPoolManager.shutdownAndExit()
+    }
+
+}
+
+fun main(args: Array&lt;String>) {
+
+    val log = LoggerFactory.getLogger(RobokeyApplication::class.java)
+
+    if (args.contains("--help") || args.contains("-h") || args.contains("/h")) {
+        ConsoleCommandHandler.help()
+
+        // hasn't started up the taskPool yet so can just exit
+        SystemExitHandler().exitProcess(0)
+    }
+    log.info("Starting app ...")
+    System.setProperty("java.awt.headless", "false")
+    runApplication&lt;RobokeyApplication>(*args)
+}
+</code></pre>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<p><strong>REST Controller</strong>: Provides a simple REST API for sending commands. Here is an except showing some functionality</p>
+
+
+
+<pre class="wp-block-code"><code><code>@RestController
+class KeySendController(val keySendService: KeySendService) {
+    @GetMapping("/ping")
+    fun ping(): Mono&lt;String> = Mono.just("OK")
+
+    @GetMapping("/command")
+    fun sendCommand(@RequestParam("text") text: String): Mono&lt;String> {
+        return Mono.defer {
+            Mono.fromCallable {
+                URLDecoder.decode(text, StandardCharsets.UTF_8.toString())
+            }.subscribeOn(Schedulers.boundedElastic())
+        }.flatMap { decodedText ->
+            Mono.fromCallable {
+                keySendService.sendCommands(listOf(decodedText))
+                "Command sent: $decodedText"
+            }.subscribeOn(Schedulers.boundedElastic())
+        }
+    }</code>
+// ... rest of code<code>
+}
+</code>}</code></pre>
+
+
+
+<pre class="wp-block-preformatted"></pre>
+
+
+
+<h3 class="wp-block-heading">Kotlin Coroutines vs Threads</h3>
+
+
+
+<p>I used a TaskPool to allow me to execute and control multiple threads. I did this as some were unsuitable to be coroutines. Kotlin Coroutines are a tool for writing asynchronous and concurrent code in Kotlin. They allow for non-blocking code that is simpler and more efficient than traditional threading. I should avoid using coroutines and thread at the same time as there can be problems doing this. I do plan to refactor this before publishing full source, and will either need to switch everything to threadpools, or design my application so that coroutines will work, this might be a good route as splitting things up may allow me to send higher priority messages to interupt work in progress.</p>
+
+
+
+<h4 class="wp-block-heading"><strong>The Primary Use Cases of Coroutines are:</strong></h4>
+
+
+
+<p>Asynchronous Programming: Writing asynchronous code in a sequential manner.<br>Concurrency: Performing multiple tasks concurrently without explicit thread management.<br>Background Processing: Running tasks like network requests or file I/O in the background.<br>UI Updates: In Android, performing background tasks while updating the UI on the main thread.</p>
+
+
+
+<h4 class="wp-block-heading"><strong>Benefits of Using Coroutines for Managing Concurrency:</strong></h4>
+
+
+
+<p>Simplicity: Write asynchronous code without callbacks, making it more readable and maintainable.<br>Efficiency: Lightweight and efficient, handling many more concurrent tasks than traditional threads.<br>Scalability: Scale better than threads, handling thousands of tasks with lower overhead.<br>Structured Concurrency: Manage the lifecycle of concurrent tasks, preventing memory leaks.<br>Error Handling: Built-in mechanisms for handling exceptions in asynchronous code.</p>
+
+
+
+<h4 class="wp-block-heading"><strong>Examples of Tasks Unsuited for Coroutines:</strong></h4>
+
+
+
+<p>Blocking I/O Operations: Tasks that involve heavy blocking I/O operations like reading large files or blocking network calls.<br>Long-running CPU-bound Tasks: Intensive CPU-bound tasks that run for a long time may benefit more from a dedicated thread pool.<br>Real-time Systems: Systems requiring strict timing constraints where coroutine scheduling might introduce unacceptable latency.<br>Tasks with High Precision Timing Requirements: Tasks requiring high precision timing, such as certain simulations or hardware interactions.<br>Tasks Requiring Synchronous Execution: Tasks that must be executed in a strict sequence without interruption, where coroutine overhead might not be justified.</p>
+
+
+
+<h3 class="wp-block-heading">Conclusion</h3>
+
+
+
+<p>This project is an example of integrating Kotlin, Arduino, and Java technologies to create a versatile robot keyboard PC controller interface. While I haven't published the full source code yet, I plan to do so after further refinement and clean up. Stay tuned for more updates and detailed explanations of my other projects!</p>

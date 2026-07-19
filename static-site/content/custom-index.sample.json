@@ -1,0 +1,12 @@
+[
+  {
+    "type": "page",
+    "title": "Example Custom Page",
+    "slug": "example-custom-page",
+    "date": "",
+    "categories": ["Notebook"],
+    "excerpt": "A short summary used on listing cards and search results.",
+    "hero": "",
+    "contentFile": "content/custom/example-custom-page.html"
+  }
+]

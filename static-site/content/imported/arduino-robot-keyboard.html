@@ -1,0 +1,1804 @@
+<h2 class="wp-block-heading">Using StreamDeck on Linux via a Windows Machine: A DIY Solution</h2>
+
+
+
+<p>As a fan of the StreamDeck macro keypad, I wanted to extend its functionality to my Linux setup. Officially, StreamDeck doesn't support Linux, though there are some third party attempts, but I want something I can easily plug in with minimal configuration. I was determined to find a workaround without purchasing an additional device or constantly swapping it between machines. The solution I devised was to connect the StreamDeck to my Windows machine and relay its input to my Linux computer.</p>
+
+
+
+<h3 class="wp-block-heading">The Idea</h3>
+
+
+
+<p>Given the proximity of my Windows and Linux machines, I realized I could emulate a keyboard to transmit data from the StreamDeck on Windows to Linux. This approach would allow me to leverage the StreamDeck's capabilities without needing native Linux support.</p>
+
+
+
+<h3 class="wp-block-heading">The Solution: Microcontrollers to the Rescue</h3>
+
+
+
+<p>To emulate a keyboard, I discovered that various microcontrollers could serve this purpose. Typically, this would involve connecting two microcontrollers and using serial communication to transfer data between them. Alternatively, one could create a fake PS2 keyboard using serial pins and an adapter. However, I found a more straightforward solution: the Arduino Due. This microcontroller comes equipped with two USB ports, one of which can emulate a USB keyboard. Fortunately, I had a spare Arduino Due from previous projects. The Arduino Due was officially released in 2012, it still appears to be easily available as of 2024. It marked Arduino's first board based on a 32-bit ARM core microcontroller, significantly expanding the capabilities available to makers and developers compared to the earlier 8-bit AVR-based boards like the Arduino Uno. More modern faster and cheaper microcontrollers are now available, however they do not have these dual USB ports, one of which can emulate a keyboard.</p>
+
+
+
+<h3 class="wp-block-heading">Implementation</h3>
+
+
+
+<p>I wrote a program for the Arduino Due to listen for input from the Windows machine and emulate keyboard presses on the Linux machine. Here's a simplified overview of how I accomplished this:</p>
+
+
+
+<ol>
+<li><strong>Connection Setup</strong>: Connect the StreamDeck to the Windows machine.</li>
+
+
+
+<li><strong>Data Transmission</strong>: Write a program on the Windows machine to send StreamDeck input data over a serial connection to the Arduino Due.</li>
+
+
+
+<li><strong>Keyboard Emulation</strong>: Program the Arduino Due to receive the serial data and emulate keyboard presses via its USB port connected to the Linux machine.</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Adding a Kotlin Client</h3>
+
+
+
+<p>To streamline the process, I wrote a Kotlin client that facilitates data transmission from the StreamDeck to the Arduino software. This client ensures that the StreamDeck inputs are efficiently sent from the Windows machine to the Arduino Due, enhancing the overall integration and user experience.</p>
+
+
+
+<h3 class="wp-block-heading">Considerations and Limitations</h3>
+
+
+
+<ul>
+<li><strong>No RTOS</strong>: The implementation doesn't use a Real-Time Operating System (RTOS), which means it lacks advanced features, like command cancellation, as these would need multiple threads. This limitation is acceptable for my use case, as the project isn't intended to be a sophisticated hacking tool, just a way to send short bits of text or a few keystrokes.</li>
+
+
+
+<li><strong>Random Delays</strong>: For testing purposes, I included random delays in the code. While not representative of actual typing behaviour, they can be useful for specific application tests and short demonstrations.</li>
+
+
+
+<li><strong>Code Quality</strong>: The code is functional but not perfect. My expertise lies in Kotlin and Java, not C, and the code evolved through incremental changes. Despite some duplication, the program is reliable and meets my needs.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Conclusion</h3>
+
+
+
+<p>By leveraging the Arduino Due and some creative programming, I successfully integrated my StreamDeck with a Linux machine via a Windows intermediary. This project demonstrates how you can overcome hardware compatibility issues with a bit of ingenuity and technical know-how. If you're facing similar challenges, I encourage you to explore the potential of microcontrollers and cross-platform solutions. The addition of a Kotlin client further simplifies the process, making the StreamDeck's functionality seamlessly available across different operating systems.</p>
+
+
+
+<p>The Arduino sketch code is below:</p>
+
+
+
+<pre class="wp-block-code"><code>
+/*
+ * This file is part of Robokeyboard.
+ *
+ * Copyright (C) 2024 Rob Deas
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
+ */
+#include &lt;Keyboard.h&gt;
+#include &lt;HID.h&gt;
+
+// Define a struct to represent key mappings
+struct KeyMapping {
+  const char* text;
+  uint8_t keyCode;
+};
+
+enum CommandType {
+  HELP,
+  TYPE_HELP,
+  PING,
+  STATUS,
+  LOREM,
+  LOREM_LINES,
+  TEXT,
+  LINE,
+  KEY,
+  COMBO,
+  EDIT,
+  HOLD,
+  CMD_OUTPUT_OFF,
+  CMD_OUTPUT_ON,
+  CMD_SET_DELAY,
+  CMD_SET_PRESS_LENGTH,
+  CMD_RESET,
+  CMD_ECHO_ON,
+  CMD_ECHO_OFF,
+  CMD_DEBUG_ON,
+  CMD_DEBUG_OFF,
+  CMD_JITTER_ON,
+  CMD_JITTER_OFF,
+  CMD_KEY_JITTER_ON,
+  CMD_KEY_JITTER_OFF,
+  CMD_DELAY_JITTER_ON,
+  CMD_DELAY_JITTER_OFF,
+  CMD_SET_KEY_JITTER_VALUE,
+  CMD_SET_DELAY_JITTER_VALUE,
+  CMD_CONNECT,
+  CMD_DISCONNECT,
+  CMD_RECONNECT,
+  RELEASE_KEY,
+  RELEASE_ALL_KEYS,
+  INVALID
+};
+
+// Define an array of key mappings
+KeyMapping keyMappings&#91;] = {
+  { "@C", KEY_LEFT_CTRL },
+  { "@S", KEY_LEFT_SHIFT },
+  { "@A", KEY_LEFT_ALT },
+  { "\\R", KEY_RETURN },
+  { "\\N", KEY_RETURN },
+  { "\\B", KEY_BACKSPACE },
+  { "\\T", KEY_TAB },
+  { "UP", KEY_UP_ARROW },
+  { "DOWN", KEY_DOWN_ARROW },
+  { "LEFT", KEY_LEFT_ARROW },
+  { "RIGHT", KEY_RIGHT_ARROW },
+  { "CTRL", KEY_LEFT_CTRL },
+  { "SHIFT", KEY_LEFT_SHIFT },
+  { "ALT", KEY_LEFT_ALT },
+  { "GUI", KEY_LEFT_GUI },
+  { "ALT_GR", KEY_RIGHT_ALT },
+  { "DEL", KEY_DELETE },
+  { "BS", KEY_BACKSPACE },
+  { "BKSP", KEY_BACKSPACE },
+  { "LEFT_CTRL", KEY_LEFT_CTRL },
+  { "LEFT_SHIFT", KEY_LEFT_SHIFT },
+  { "LEFT_ALT", KEY_LEFT_ALT },
+  { "LEFT_GUI", KEY_LEFT_GUI },
+  { "RIGHT_CTRL", KEY_RIGHT_CTRL },
+  { "RIGHT_SHIFT", KEY_RIGHT_SHIFT },
+  { "RIGHT_ALT", KEY_RIGHT_ALT },
+  { "RIGHT_GUI", KEY_RIGHT_GUI },
+  { "UP_ARROW", KEY_UP_ARROW },
+  { "DOWN_ARROW", KEY_DOWN_ARROW },
+  { "LEFT_ARROW", KEY_LEFT_ARROW },
+  { "RIGHT_ARROW", KEY_RIGHT_ARROW },
+  { "BACKSPACE", KEY_BACKSPACE },
+  { "TAB", KEY_TAB },
+  { "RETURN", KEY_RETURN },
+  { "MENU", KEY_MENU },
+  { "ESC", KEY_ESC },
+  { "INSERT", KEY_INSERT },
+  { "DELETE", KEY_DELETE },
+  { "PAGE_UP", KEY_PAGE_UP },
+  { "PAGE_DOWN", KEY_PAGE_DOWN },
+  { "HOME", KEY_HOME },
+  { "END", KEY_END },
+  { "CAPS_LOCK", KEY_CAPS_LOCK },
+  { "PRINT_SCREEN", KEY_PRINT_SCREEN },
+  { "SCROLL_LOCK", KEY_SCROLL_LOCK },
+  { "PAUSE", KEY_PAUSE },
+  { "NUM_LOCK", KEY_NUM_LOCK },
+  { "KP_SLASH", KEY_KP_SLASH },
+  { "KP_ASTERISK", KEY_KP_ASTERISK },
+  { "KP_MINUS", KEY_KP_MINUS },
+  { "KP_PLUS", KEY_KP_PLUS },
+  { "KP_ENTER", KEY_KP_ENTER },
+  { "KP_1", KEY_KP_1 },
+  { "KP_2", KEY_KP_2 },
+  { "KP_3", KEY_KP_3 },
+  { "KP_4", KEY_KP_4 },
+  { "KP_5", KEY_KP_5 },
+  { "KP_6", KEY_KP_6 },
+  { "KP_7", KEY_KP_7 },
+  { "KP_8", KEY_KP_8 },
+  { "KP_9", KEY_KP_9 },
+  { "KP_0", KEY_KP_0 },
+  { "KP_DOT", KEY_KP_DOT },
+  { "F1", KEY_F1 },
+  { "F2", KEY_F2 },
+  { "F3", KEY_F3 },
+  { "F4", KEY_F4 },
+  { "F5", KEY_F5 },
+  { "F6", KEY_F6 },
+  { "F7", KEY_F7 },
+  { "F8", KEY_F8 },
+  { "F9", KEY_F9 },
+  { "F10", KEY_F10 },
+  { "F11", KEY_F11 },
+  { "F12", KEY_F12 },
+  { "F13", KEY_F13 },
+  { "F14", KEY_F14 },
+  { "F15", KEY_F15 },
+  { "F16", KEY_F16 },
+  { "F17", KEY_F17 },
+  { "F18", KEY_F18 },
+  { "F19", KEY_F19 },
+  { "F20", KEY_F20 },
+  { "F21", KEY_F21 },
+  { "F22", KEY_F22 },
+  { "F23", KEY_F23 },
+  { "F24", KEY_F24 },
+};
+
+const char LF = '\n';
+const char CR = '\r';
+// jitter is intended for testing fragile apis, the jitter value for keys will need to be kept short unless testing debouncing of keypresses for example
+// as otherwise it will give repeated letters sometimes
+const int KEY_JITTER_MAX_VALUE = 50;
+// jitter interval between keys will default to larger that for keypress
+const int DELAY_JITTER_MAX_VALUE = 100;
+int keystrokeDelay = 0;  // Initial delay between keystrokes is 0 millisecs but each delay will have a minimum overriding it
+int keyPressLength = 0;  // the time a key will be held down again there will be a minimum
+int keyJitterMaxValue = KEY_JITTER_MAX_VALUE;
+int delayJitterMaxValue = DELAY_JITTER_MAX_VALUE;
+bool isDebugEnabled = true;
+bool isConnected = false;
+bool isEchoEnabled = true;
+bool isStopRequested = false;
+bool addKeyJitter = false;
+bool addDelayJitter = false;
+
+void setup() {
+  delay(150);
+  // Start the serial communication
+  Serial.begin(9600);
+  Keyboard.begin();
+  isConnected = true;
+  // Wait for a stable connection (optional)
+  delay(1000);
+  Serial.println("");
+  infoMessage("Keyboard emulation started");
+  infoMessage("HELP command will print help.");
+}
+
+
+void printHelp(bool sendToKeyboard = false) {
+  // Define the help message
+  const char* helpMessage&#91;] = {
+    "",
+    "ROBO-KEYBOARD",
+    "-------------",
+    "This uses an Arduino Due to act as a virtual keyboard, that can be used for keyboard macros or testing."
+    "",
+    "Usage:",
+    "  HELP - Send this help text to the serial port.",
+    "  TYPE_HELP - Send this help text to the keyboard.",
+    "  PING - Check if the device is responsive",
+    "  STATUS - Get current status of the device",
+    "  LOREM - Type the Lorem Ipsum text on the keyboard",
+    "  LOREM_LINES - Type the Lorem Ipsum text on the keyboard, as 4 lines of",
+    "  TEXT:&lt;message&gt; - Send a message as keystrokes",
+    "  LINE:&lt;message&gt; - Send a message followed by a newline",
+    "  KEY:&lt;key&gt; - Send a single key press",
+    "  COMBO:&lt;keys&gt; - Send a combination of keys (e.g., CTRL-ALT-DEL)",
+    "  EDIT:&lt;action&gt; - Perform an edit action (cut, copy, paste, selectall)",
+    "  HOLD:&lt;key&gt; - Hold a key down",
+    "  RELEASE_KEY:&lt;key&gt; - Release a specific key",
+    "  RELEASE:ALL - Release all held keys",
+    "  CMD:OUTPUT:OFF - Stop sending keys to the keyboard",
+    "  CMD:OUTPUT:ON - Resume sending keys to the keyboard",
+    "  CMD:SET:DELAY:&lt;value&gt; - Set delay between keystrokes",
+    "  CMD:SET:PRESS-LENGTH:&lt;value&gt; - Set the length of key presses",
+    "  CMD:RESET - Reset the device",
+    "  CMD:ECHO:ON - Enable echoing of serial input",
+    "  CMD:ECHO:OFF - Disable echoing of serial input",
+    "  CMD:DEBUG:ON - Enable debug messages",
+    "  CMD:DEBUG:OFF - Disable debug messages",
+    "  CMD:JITTER:ON - Enable jitter for both key press and release timings",
+    "  CMD:JITTER:OFF - Disable jitter for both key press and release timings",
+    "  CMD:KEY_JITTER:ON - Enable jitter for key press timings only",
+    "  CMD:KEY_JITTER:OFF - Disable jitter for key press timings only",
+    "  CMD:DELAY_JITTER:ON - Enable jitter for key interval timings only",
+    "  CMD:DELAY_JITTER:OFF - Disable jitter for key interval timings only",
+    "  CMD:SET:KEY_JITTER_MAX:&lt;value&gt; - Set maximum key press jitter value",
+    "  CMD:SET:DELAY_JITTER_MAX:&lt;value&gt; - Set maximum delay after keypress jitter value",
+    "  CMD:CONNECT - Connect the keyboard",
+    "  CMD:DISCONNECT - Disconnect the keyboard",
+    "  CMD:RECONNECT - Reconnect the keyboard",
+    "",
+    "NOTE: - can be substituted for _ in commands.",
+    "There are some shortnames for keys: @C is CTRL, @S is SHIFT, @A is ALT ",
+    "These @ modifiers will work in combo along wth the f-keys everything else appart from the seperator - there is assumed to be normal keys.",
+    "in the key command you can also use \\R or \\N as RETURN, \\B as BACKSPACE, \\T as TAB.",
+    ""
+
+  };
+
+
+  // Send the help message either to the Serial or to the Keyboard
+  for (const char* line : helpMessage) {
+    if (sendToKeyboard) {
+      // Send each line of the help message to the keyboard
+      for (const char* p = line; *p != '\0'; p++) {
+        Keyboard.press(*p);
+        delay(10);
+        Keyboard.release(*p);
+        delay(10);
+      }
+      // Send a newline character after each line
+      Keyboard.press(KEY_RETURN);
+      delay(10);
+      Keyboard.release(KEY_RETURN);
+      delay(10);
+    } else {
+      // Send each line of the help message to the Serial
+      Serial.println(F(line));
+    }
+  }
+}
+
+
+// Function to find the key code based on text
+uint8_t findKeyCode(const String&amp; text) {
+  for (size_t i = 0; i &lt; sizeof(keyMappings) / sizeof(keyMappings&#91;0]); i++) {
+    if (text.equals(keyMappings&#91;i].text)) {
+      debugMessage("Key found: " + text + ", keyCode: " + String(keyMappings&#91;i].keyCode));
+      return keyMappings&#91;i].keyCode;
+    }
+  }
+  debugMessage("Key not found: " + text);
+  // Return 0 if key not found
+  return 0;
+}
+
+void sendKeyboardMessage(const String&amp; message, bool newLine = false) {
+  debugMessage("Processing sendMessage to Keyboard: " + message);
+  for (int i = 0; i &lt; message.length(); i++) {
+    char currentChar = message&#91;i];
+    if (isStopRequested) {
+      Keyboard.releaseAll();
+      delay(10);
+      return;
+    }
+    Keyboard.press(currentChar);
+    delay(10);
+    keyPressWaitWithMinimum(10);
+    Keyboard.releaseAll();
+    keyIntervalWaitWithMinimum(10);
+  }
+  if (newLine) sendReturn();
+}
+
+
+void typeLoremIpsum(bool newLine = false) {
+  const char* loremIpsum1 = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ";
+  const char* loremIpsum2 = "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. ";
+  const char* loremIpsum3 = "Duis aute irure dolor in reprehender it in voluptate velit esse cillum dolore eu fugiat nulla pariatur. ";
+  const char* loremIpsum4 = "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+
+  sendKeyboardMessage(loremIpsum1, newLine);
+  sendKeyboardMessage(loremIpsum2, newLine);
+  sendKeyboardMessage(loremIpsum3, newLine);
+  sendKeyboardMessage(loremIpsum4, newLine);
+}
+
+void sendReturn() {
+  Keyboard.press('\n');
+  keyPressWaitWithMinimum(50);  // Delay before newline (optional, adjust as needed)
+  Keyboard.releaseAll();
+  keyIntervalWaitWithMinimum(50);
+}
+
+void sendPingResponse() {
+  Serial.println("RESPONSE:OK");  // Indicate that the command was received and processed successfully
+}
+
+void sendStatusResponse() {
+  String status = isConnected ? "connected" : "disconnected";
+  Serial.print(F("RESPONSE:{\"app\": \"DueKeys\", \"status\": \""));
+  Serial.print(status);
+  Serial.print(F("\", \"debug\": \""));
+  Serial.print(isDebugEnabled ? "on" : "off");
+  Serial.print(F("\", \"echo\": \""));
+  Serial.print(isEchoEnabled ? "on" : "off");
+  Serial.print(F("\", \"output\": \""));
+  Serial.print(isStopRequested ? "off" : "on");
+  Serial.print(F("\", \"keyJitter\": \""));
+  Serial.print(addKeyJitter ? "on" : "off");
+  Serial.print(F("\", \"delayJitter\": \""));
+  Serial.print(addDelayJitter ? "on" : "off");
+  if (keystrokeDelay != 0) {
+    Serial.print(F("\", \"KeyStrokeDelay\": \""));
+    Serial.print(String(keystrokeDelay));
+  }
+  if (keyPressLength != 0) {
+    Serial.print(F("\", \"keyPressLength\": \""));
+    Serial.print(String(keyPressLength));
+  }
+  if (addKeyJitter &amp;&amp; keyJitterMaxValue != 0) {
+    Serial.print(F("\", \"keyJitterMaxValue\": \""));
+    Serial.print(String(keyJitterMaxValue));
+  }
+  if (addDelayJitter &amp;&amp; delayJitterMaxValue != 0) {
+    Serial.print(F("\", \"delayJitterMaxValue\": \""));
+    Serial.print(String(delayJitterMaxValue));
+  }
+  Serial.println(F("\", \"version\": \"0.4.1\"}"));
+}
+
+
+CommandType parseCommandType(const String&amp; command) {
+  debugMessage("&lt;" + command + "&gt;");
+  if (command == "HELP") {
+    return HELP;
+  } else if (command == "TYPE_HELP" || command == "TYPE-HELP") {
+    return TYPE_HELP;
+  } else if (command == "PING") {
+    return PING;
+  } else if (command == "STATUS") {
+    return STATUS;
+  } else if (command == "LOREM") {
+    return LOREM;
+  } else if (command == "LOREM_LINES" || command == "LOREM-LINES") {
+    return LOREM_LINES;
+  } else if (command.startsWith("TEXT:")) {
+    // Text is a string that doesnt have a new line
+    return TEXT;
+  } else if (command.startsWith("LINE:")) {
+    // Line is alike text but types a new line
+    return LINE;
+  } else if (command.startsWith("KEY:")) {
+    return KEY;
+    // press and release a key
+  } else if (command.startsWith("COMBO:")) {
+    // combo is a combination of keys eg ctrl-alt-x
+    return COMBO;
+  } else if (command.startsWith("EDIT:")) {
+    // cut copy paste
+    return EDIT;
+  } else if (command.startsWith("HOLD:")) {
+    // holds down a key and doesnt release it
+    return HOLD;
+  } else if (command.startsWith("CMD:SET:DELAY:")) {
+    // an additional delay adter each keypress, delays will be needed anyway, but could still sometimes be too fast
+    return CMD_SET_DELAY;
+  } else if (command.startsWith("CMD:SET:DELAY-JITTER-MAX:") || command.startsWith("CMD:SET:DELAY-JITTER_MAX:")) {
+    // sets the actual max value of jitter but doesnt turn it on or off
+    return CMD_SET_DELAY_JITTER_VALUE;
+  } else if (command.startsWith("CMD:SET:KEY-JITTER-MAX:") || command.startsWith("CMD:SET:KEY_JITTER_MAX:")) {
+    // sets the actual max value of jitter but doesnt turn it on or off
+    return CMD_SET_KEY_JITTER_VALUE;
+  } else if (command.startsWith("CMD:SET:PRESS-LENGTH:") || command.startsWith("CMD:SET:PRESS_LENGTH:")) {
+    // the time a keypress will be held down, delays will be needed anyway, but could still sometimes be too fast
+    return CMD_SET_PRESS_LENGTH;
+  } else if (command.startsWith("RELEASE_KEY:") || command.startsWith("RELEASE-KEY:")) {
+    // release a specific held key
+    return RELEASE_KEY;
+  } else if (command == "RELEASE:ALL") {
+    // release all held keys, note currently using text or line will release automatically
+    return RELEASE_ALL_KEYS;
+  } else if (command == "CMD:OUTPUT:OFF") {
+    // output off just means keys wont be sent to the keyboard until resume, any keypresses will be lost
+    return CMD_OUTPUT_OFF;
+  } else if (command == "CMD:OUTPUT:ON") {
+    // resume sending keys to the keyboard
+    return CMD_OUTPUT_ON;
+  } else if (command == "CMD:RESET") {
+    // reset arduino
+    return CMD_RESET;
+  } else if (command == "CMD:ECHO:ON") {
+    return CMD_ECHO_ON;
+  } else if (command == "CMD:ECHO:OFF") {
+    return CMD_ECHO_OFF;
+  } else if (command == "CMD:DEBUG:ON") {
+    return CMD_DEBUG_ON;
+  } else if (command == "CMD:DEBUG:OFF") {
+    return CMD_DEBUG_OFF;
+  } else if (command == "CMD:JITTER:ON") {
+    // Jitter is intended for testing fragile APIS that might duplicate keys, or have some odd effects
+    return CMD_JITTER_ON;
+  } else if (command == "CMD:JITTER:OFF") {
+    return CMD_JITTER_OFF;
+  } else if (command == "CMD:KEY_JITTER:ON") {
+    // Jitter is intended for testing fragile APIS that might duplicate keys, or have some odd effects
+    return CMD_KEY_JITTER_ON;
+  } else if (command == "CMD:KEY_JITTER:OFF") {
+    return CMD_DELAY_JITTER_OFF;
+  } else if (command == "CMD:DELAY_JITTER:ON") {
+    // Jitter is intended for testing fragile APIS that might duplicate keys, or have some odd effects
+    return CMD_DELAY_JITTER_ON;
+  } else if (command == "CMD:DELAY_JITTER:OFF") {
+    return CMD_DELAY_JITTER_OFF;
+  } else if (command == "CMD:CONNECT") {
+    return CMD_CONNECT;
+  } else if (command == "CMD:DISCONNECT") {
+    return CMD_DISCONNECT;
+  } else if (command == "CMD:RECONNECT") {
+    return CMD_RECONNECT;
+  } else {
+    return INVALID;
+  }
+}
+
+
+void keyPressWaitWithMinimum(int minimum) {
+  waitWithMinimumValues(minimum, keyPressLength, keyJitterMaxValue, addKeyJitter);
+}
+
+void keyIntervalWaitWithMinimum(int minimum) {
+  waitWithMinimumValues(minimum, keystrokeDelay, delayJitterMaxValue, addDelayJitter);
+}
+
+/**
+* there is both a key and a delay jitter they take default values
+*/
+void waitWithMinimumValues(int minimum, int delayMillisSetting, int jitterMaxValue, bool addJitter) {
+  int delayMillis = delayMillisSetting;
+  if (addJitter &amp;&amp; jitterMaxValue &gt; 0) {
+    // could mean if we fiddle with these values jitter will be tiny or dissapear as there is a minimum
+    if (delayMillisSetting == 0) {
+      delayMillis = jitterMaxValue + minimum;
+    }
+    int jitter = random(0, jitterMaxValue + 1);
+    if (random(0, 2) == 0) {  // Randomly decide to add or subtract
+      delayMillis += jitter;
+    } else {
+      delayMillis -= jitter;
+    }
+    if (delayMillis &lt; 0) {
+      delayMillis = 0;  // Ensure delayMillis is not negative
+    }
+  }
+  if (delayMillis &lt; minimum) delayMillis = minimum;
+  if (addJitter) debugMessage("Delay applied: " + String(delayMillis));
+  delay(delayMillis);
+}
+
+void sendKey(const String&amp; text, boolean hold) {
+  String upperCaseText = text;
+  upperCaseText.toUpperCase();
+  Serial.println("Keyboard key send requested : " + text);
+  uint8_t keyCode = findKeyCode(upperCaseText);
+  if (keyCode != 0) {
+    debugMessage("Key code found : " + upperCaseText);
+    if (isStopRequested) {
+      Keyboard.releaseAll();
+      delay(10);
+      return;
+    }
+    Keyboard.press(keyCode);  // Press the key
+    keyPressWaitWithMinimum(50);
+    if (!hold) {                  // Optional delay to ensure key press is registered
+      Keyboard.release(keyCode);  // Release the key
+      keyIntervalWaitWithMinimum(50);
+      debugMessage("key released");
+    }
+  }
+}
+
+void sendKeyCombination(String keys) {
+  String lowerCaseModifiers = keys;
+  lowerCaseModifiers.toLowerCase();
+
+  // Split the keys string into individual key components
+  int indexOfCtrl = lowerCaseModifiers.indexOf("ctrl");
+  if (indexOfCtrl == -1) indexOfCtrl = lowerCaseModifiers.indexOf("@c");
+  int indexOfAlt = lowerCaseModifiers.indexOf("alt");
+  if (indexOfAlt == -1) indexOfAlt = lowerCaseModifiers.indexOf("@a");
+  int indexOfAltGr = lowerCaseModifiers.indexOf("altgr");
+  int indexOfShift = lowerCaseModifiers.indexOf("shift");
+  if (indexOfShift == -1) indexOfShift = lowerCaseModifiers.indexOf("@s");
+  int indexOfGui = lowerCaseModifiers.indexOf("gui");
+  int indexOfKey = lowerCaseModifiers.indexOf("-");
+
+  if (indexOfCtrl == -1 &amp;&amp; indexOfAlt == -1 &amp;&amp; indexOfShift == -1 &amp;&amp; indexOfGui == -1 &amp;&amp; indexOfKey == -1 &amp;&amp; indexOfAltGr == -1) {
+    debugMessage("No modifier key");
+  }
+
+  // Check if each modifier is present in the keys string and press accordingly
+  if (indexOfCtrl != -1) {
+    Keyboard.press(KEY_LEFT_CTRL);
+    keyPressWaitWithMinimum(10);
+    debugMessage("CTRL held down");
+  }
+  if (indexOfAlt != -1) {
+    Keyboard.press(KEY_LEFT_ALT);
+    keyPressWaitWithMinimum(10);
+    debugMessage("ALT held down");
+  }
+  if (indexOfShift != -1) {
+    Keyboard.press(KEY_LEFT_SHIFT);
+    keyPressWaitWithMinimum(10);
+    debugMessage("SHIFT held down");
+  }
+  if (indexOfGui != -1) {
+    Keyboard.press(KEY_LEFT_GUI);
+    keyPressWaitWithMinimum(10);
+    debugMessage("GUI held down");
+  }
+  if (indexOfAltGr != -1) {
+    Keyboard.press(KEY_RIGHT_ALT);
+    keyPressWaitWithMinimum(10);
+    debugMessage("ALT-GR held down");
+  }
+
+  // Press the specified key
+  String mainKey = keys.substring(indexOfKey + 1);
+  if (mainKey.startsWith("f")) {
+    // If the key is a function key (F1-F24)
+    int fKeyNumber = mainKey.substring(1).toInt();
+    if (fKeyNumber &gt;= 1 &amp;&amp; fKeyNumber &lt;= 24) {
+      Keyboard.press(KEY_F1 + fKeyNumber - 1);  // Convert F1-F24 to corresponding key code
+      debugMessage("Function key pressed.");
+    }
+  } else {
+    // If the key is not a function key, assume it's a normal key
+    //Keyboard.press(mainKey.toInt());  // Convert to key code (assuming it's a key code)
+    for (int i = 0; i &lt; mainKey.length(); i++) {
+      char currentChar = mainKey&#91;i];
+      if (isStopRequested) {
+        Keyboard.releaseAll();
+        delay(10);
+        return;
+      }
+      Keyboard.press(currentChar);
+      delay(10);
+    }
+    debugMessage("Normal key press.");
+  }
+  keyPressWaitWithMinimum(10);
+  // Release all keys
+  Keyboard.releaseAll();
+  keyIntervalWaitWithMinimum(10);
+}
+
+void releaseKey(const String&amp; text) {
+  String upperCaseText = text;
+  upperCaseText.toUpperCase();
+  debugMessage("Keyboard key send requested : " + upperCaseText);
+  uint8_t keyCode = findKeyCode(upperCaseText);
+  // Optional delay to ensure key press is registered
+  Keyboard.release(keyCode);  // Release the key
+  keyIntervalWaitWithMinimum(50);
+  debugMessage("key released");
+}
+
+void resetArduino() {
+  // Reset the Arduino Due
+  NVIC_SystemReset();
+}
+
+void sendEditAction(char actionKey) {
+  Keyboard.press(KEY_LEFT_CTRL);
+  keyPressWaitWithMinimum(10);
+  Keyboard.press(actionKey);
+  keyPressWaitWithMinimum(50);
+  Keyboard.releaseAll();
+  keyIntervalWaitWithMinimum(50);
+}
+
+// Function to perform the cut action (Ctrl + X)
+void cut() {
+  sendEditAction('x');
+  debugMessage("cut sent");
+}
+
+// Function to perform the copy action (Ctrl + C)
+void copy() {
+  sendEditAction('c');
+  debugMessage("copy sent");
+}
+
+// Function to perform the paste action (Ctrl + V)
+void paste() {
+  sendEditAction('v');
+  debugMessage("paste sent");
+}
+
+// Function to perform the select all action (Ctrl + A)
+void selectAll() {
+  sendEditAction('a');
+  debugMessage("Select all sent");
+}
+
+
+void handleEditCommand(const String&amp; text) {
+  debugMessage("Handling edit command");
+  String command = text;
+  command.toLowerCase();
+  if (command == "cut") {
+    cut();
+  } else if (command == "copy") {
+    copy();
+  } else if (command == "paste") {
+    paste();
+  } else if (command == "selectall" || command == "select:all" || command == "select-all") {
+    selectAll();
+  } else {
+    debugMessage("A bad edit command was given");
+    // Handle invalid command
+  }
+}
+
+void handleCommand(const String&amp; commandString) {
+  // might get extra blank lines , if terminator is CR/LF but can safely ignore them
+  if (commandString.length() &gt; 0) {
+    String upperCaseCommandString = commandString;
+    upperCaseCommandString.toUpperCase();
+    CommandType type = parseCommandType(upperCaseCommandString);
+    String parameter = commandString.substring(commandString.indexOf(':') + 1);
+
+    // Declare variable outside of the switch statement
+    int delayValue = 0;
+
+    switch (type) {
+      case HELP:
+        printHelp();
+        break;
+      case TYPE_HELP:
+        printHelp(true);
+        break;
+      case PING:
+        sendPingResponse();
+        break;
+      case STATUS:
+        sendStatusResponse();
+        break;
+      case LOREM:
+        typeLoremIpsum();
+        break;
+      case LOREM_LINES:
+        typeLoremIpsum(true);
+        break;
+      case TEXT:
+        sendKeyboardMessage(parameter);
+        break;
+      case LINE:
+        sendKeyboardMessage(parameter, true);
+        break;
+      case KEY:
+        sendKey(parameter, false);
+        break;
+      case COMBO:
+        sendKeyCombination(parameter);
+        break;
+      case EDIT:
+        handleEditCommand(parameter);
+        break;
+      case HOLD:
+        sendKey(parameter, true);
+        break;
+      case RELEASE_KEY:
+        releaseKey(parameter);
+        break;
+      case RELEASE_ALL_KEYS:
+        Keyboard.releaseAll();  // Release the key
+        delay(50);
+        break;
+      case CMD_OUTPUT_OFF:
+        isStopRequested = true;
+        break;
+      case CMD_OUTPUT_ON:
+        isStopRequested = false;
+        break;
+      case CMD_SET_KEY_JITTER_VALUE:
+        // Move the variable declaration here
+        keyJitterMaxValue = commandString.substring(23).toInt();  // Extract delay value from command
+        debugMessage("Maximum key jitter value set to +/- " + String(keyJitterMaxValue) + " milliseconds");
+        break;
+      case CMD_SET_DELAY_JITTER_VALUE:
+        // Move the variable declaration here
+        delayJitterMaxValue = commandString.substring(25).toInt();  // Extract delay value from command
+        debugMessage("Maximum delay jitter value set to +/- " + String(delayJitterMaxValue) + " milliseconds");
+        break;
+      case CMD_SET_DELAY:
+        // Move the variable declaration here
+        delayValue = commandString.substring(14).toInt();  // Extract delay value from command
+        keystrokeDelay = delayValue;
+        debugMessage("Additional Keystroke delay set to " + String(keystrokeDelay) + " milliseconds");
+        break;
+      case CMD_SET_PRESS_LENGTH:
+        keyPressLength = commandString.substring(21).toInt();  // Extract delay value from command
+        debugMessage("Additional keypress time set to " + String(keystrokeDelay) + " milliseconds");
+        break;
+      case CMD_RESET:
+        // Handle reset command
+        delay(5000);
+        resetArduino();
+        break;
+      case CMD_ECHO_ON:
+        isEchoEnabled = true;
+        break;
+      case CMD_ECHO_OFF:
+        isEchoEnabled = false;
+        break;
+      case CMD_DEBUG_ON:
+        isDebugEnabled = true;
+        break;
+      case CMD_DEBUG_OFF:
+        isDebugEnabled = false;
+        break;
+      case CMD_JITTER_ON:
+        addKeyJitter = true;
+        addDelayJitter = true;
+        break;
+      case CMD_JITTER_OFF:
+        addKeyJitter = false;
+        addDelayJitter = false;
+        break;
+      case CMD_KEY_JITTER_ON:
+        addKeyJitter = true;
+        break;
+      case CMD_KEY_JITTER_OFF:
+        addKeyJitter = false;
+        break;
+      case CMD_DELAY_JITTER_ON:
+        addDelayJitter = true;
+        break;
+      case CMD_DELAY_JITTER_OFF:
+        addDelayJitter = false;
+        break;
+      case CMD_CONNECT:
+        // Handle connect command
+        if (!isConnected) {
+          Keyboard.begin();
+          debugMessage("Keyboard is now connected");
+        } else {
+          isConnected = true;  // Simulate keyboard connection
+          debugMessage("Keyboard already connected");
+        }
+        break;
+      case CMD_DISCONNECT:
+        // Handle disconnect command
+        Keyboard.end();
+        isConnected = false;  // Simulate keyboard disconnection
+        debugMessage("Keyboard is now disconnected");
+        break;
+      case CMD_RECONNECT:
+        // Handle reconnect command
+        Keyboard.end();
+        delay(500);
+        Keyboard.begin();
+        delay(500);
+        isConnected = true;  // Simulate keyboard connection
+        debugMessage("Keyboard reconnected");
+        break;
+      case INVALID:
+        // Handle invalid command
+        Serial.println("Invalid command.");
+        break;
+    }
+  }
+}
+
+void debugMessage(const String&amp; message) {
+  if (isDebugEnabled) {
+    Serial.print("DEBUG:");
+    Serial.println(message);
+  }
+}
+
+void infoMessage(const String&amp; message) {
+  Serial.print("INFO:");
+  Serial.println(message);
+}
+
+void errorMessage(const String&amp; message) {
+  Serial.print("ERROR:");
+  Serial.println(message);
+}
+
+String readSerialUntil(int maxLength) {
+
+  String inputString = "";
+  while (true) {
+    if (Serial.available() &gt; 0) {
+      char incomingChar = Serial.read();
+
+      if (incomingChar == LF || incomingChar == CR) {
+        if (isEchoEnabled) {
+          Serial.println("");
+        }
+        // If the current character is CR, check if the next character is LF
+        if (incomingChar == CR &amp;&amp; Serial.peek() == LF) {
+          // Dont add the next character (LF) to the command string and break out of the loop
+          // it only doesnt get disguarded if it needs to be echoed back to the input device
+          char disposedChar = Serial.read();
+        }
+        break;  // Exit the loop after processing LF or CR
+      }
+      if (isEchoEnabled) {
+        Serial.write(incomingChar);
+      }
+      inputString += incomingChar;  // Add the character to the input string
+      if (inputString.length() &gt;= maxLength) {
+        break;  // Exit the loop if the maximum length is reached
+      }
+    }
+  }
+  return inputString;
+}
+
+void loop() {
+  String command = readSerialUntil(1024);  // Read until newline character or max chars
+  if (command.length() &gt; 0) {
+    infoMessage("Sending To Keyboard: " + command);
+  }
+  handleCommand(command);
+}
+</code></pre>
+
+
+
+<p></p>
+
+
+
+<h2 class="wp-block-heading">ROBO-KEYBOARD User Guide</h2>
+
+
+
+<p>This program uses an Arduino Due to act as a virtual keyboard, allowing you to perform keyboard macros or testing. Below are the commands you can use:</p>
+
+
+
+<h3 class="wp-block-heading">General Commands</h3>
+
+
+
+<ul>
+<li><strong>HELP</strong>: Sends this help text to the serial port.</li>
+
+
+
+<li><strong>TYPE_HELP</strong>: Sends this help text to the keyboard.</li>
+
+
+
+<li><strong>PING</strong>: Checks if the device is responsive.</li>
+
+
+
+<li><strong>STATUS</strong>: Retrieves the current status of the device.</li>
+
+
+
+<li><strong>LOREM</strong>: Types the Lorem Ipsum text on the keyboard.</li>
+
+
+
+<li><strong>LOREM_LINES</strong>: Types the Lorem Ipsum text on the keyboard as 4 lines.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Text Commands</h3>
+
+
+
+<ul>
+<li><strong>TEXT:&lt;message&gt;</strong>: Sends a message as keystrokes.
+<ul>
+<li>Example: <code>TEXT:Hello, World!</code></li>
+</ul>
+</li>
+
+
+
+<li><strong>LINE:&lt;message&gt;</strong>: Sends a message followed by a newline.
+<ul>
+<li>Example: <code>LINE:This is a new line</code></li>
+</ul>
+</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Key Commands</h3>
+
+
+
+<ul>
+<li><strong>KEY:&lt;key&gt;</strong>: Sends a single key press.
+<ul>
+<li>Example: <code>KEY:A</code> (types 'A')</li>
+</ul>
+</li>
+
+
+
+<li><strong>COMBO:&lt;keys&gt;</strong>: Sends a combination of keys (e.g., CTRL-ALT-DEL).
+<ul>
+<li>Example: <code>COMBO:CTRL-ALT-DEL</code></li>
+</ul>
+</li>
+
+
+
+<li><strong>EDIT:&lt;action&gt;</strong>: Performs an edit action (cut, copy, paste, select all).
+<ul>
+<li>Examples: <code>EDIT:CUT</code>, <code>EDIT:COPY</code>, <code>EDIT:PASTE</code>, <code>EDIT:SELECTALL</code></li>
+</ul>
+</li>
+
+
+
+<li><strong>HOLD:&lt;key&gt;</strong>: Holds a key down.
+<ul>
+<li>Example: <code>HOLD:SHIFT</code></li>
+</ul>
+</li>
+
+
+
+<li><strong>RELEASE_KEY:&lt;key&gt;</strong>: Releases a specific key.
+<ul>
+<li>Example: <code>RELEASE_KEY:SHIFT</code></li>
+</ul>
+</li>
+
+
+
+<li><strong>RELEASE</strong> : Releases all held keys.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Command Mode Controls</h3>
+
+
+
+<ul>
+<li><strong>CMD:OUTPUT</strong> : Stops sending keys to the keyboard.</li>
+
+
+
+<li><strong>CMD:OUTPUT</strong> : Resumes sending keys to the keyboard.</li>
+
+
+
+<li><strong>CMD:SET:DELAY:&lt;value&gt;</strong>: Sets the delay between keystrokes.
+<ul>
+<li>Example: <code>CMD:SET:DELAY:100</code> (sets delay to 100 ms)</li>
+</ul>
+</li>
+
+
+
+<li><strong>CMD:SET:PRESS-LENGTH:&lt;value&gt;</strong>: Sets the length of key presses.
+<ul>
+<li>Example: <code>CMD:SET:PRESS-LENGTH:50</code> (sets press length to 50 ms)</li>
+</ul>
+</li>
+
+
+
+<li><strong>CMD</strong> : Resets the device.</li>
+
+
+
+<li><strong>CMD:ECHO</strong> : Enables echoing of serial input.</li>
+
+
+
+<li><strong>CMD:ECHO</strong> : Disables echoing of serial input.</li>
+
+
+
+<li><strong>CMD:DEBUG</strong> : Enables debug messages.</li>
+
+
+
+<li><strong>CMD:DEBUG</strong> : Disables debug messages.</li>
+
+
+
+<li><strong>CMD:JITTER</strong> : Enables jitter for both key press and release timings.</li>
+
+
+
+<li><strong>CMD:JITTER</strong> : Disables jitter for both key press and release timings.</li>
+
+
+
+<li><strong>CMD:KEY_JITTER</strong> : Enables jitter for key press timings only.</li>
+
+
+
+<li><strong>CMD:KEY_JITTER</strong> : Disables jitter for key press timings only.</li>
+
+
+
+<li><strong>CMD:DELAY_JITTER</strong> : Enables jitter for key interval timings only.</li>
+
+
+
+<li><strong>CMD:DELAY_JITTER</strong> : Disables jitter for key interval timings only.</li>
+
+
+
+<li><strong>CMD:SET:KEY_JITTER_MAX:&lt;value&gt;</strong>: Sets maximum key press jitter value.
+<ul>
+<li>Example: <code>CMD:SET:KEY_JITTER_MAX:20</code> (sets max key press jitter to 20 ms)</li>
+</ul>
+</li>
+
+
+
+<li><strong>CMD:SET:DELAY_JITTER_MAX:&lt;value&gt;</strong>: Sets maximum delay after keypress jitter value.
+<ul>
+<li>Example: <code>CMD:SET:DELAY_JITTER_MAX:30</code> (sets max delay jitter to 30 ms)</li>
+</ul>
+</li>
+
+
+
+<li><strong>CMD</strong> : Connects the keyboard.</li>
+
+
+
+<li><strong>CMD</strong> : Disconnects the keyboard.</li>
+
+
+
+<li><strong>CMD</strong> : Reconnects the keyboard.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Special Notes</h3>
+
+
+
+<ul>
+<li>Hyphens (-) can be substituted for underscores (_) in commands.</li>
+
+
+
+<li>Shortnames for keys:
+<ul>
+<li><code>@C</code> is CTRL</li>
+
+
+
+<li><code>@S</code> is SHIFT</li>
+
+
+
+<li><code>@A</code> is ALT</li>
+
+
+
+<li>These <code>@</code> modifiers work in combo along with the F-keys. Everything else apart from the separator <code>-</code> is assumed to be normal keys.</li>
+</ul>
+</li>
+
+
+
+<li>Special keys in the KEY command:
+<ul>
+<li><code>\R</code> or <code>\N</code> for RETURN</li>
+
+
+
+<li><code>\B</code> for BACKSPACE</li>
+
+
+
+<li><code>\T</code> for TAB</li>
+</ul>
+</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Example Usage</h3>
+
+
+
+<ol>
+<li><strong>Typing a Message</strong>:
+<ul>
+<li>Command: <code>TEXT:Hello</code></li>
+
+
+
+<li>This will type "Hello" on the connected keyboard.</li>
+</ul>
+</li>
+
+
+
+<li><strong>Sending a Combination of Keys</strong>:
+<ul>
+<li>Command: <code>COMBO:CTRL-ALT-DEL</code></li>
+
+
+
+<li>This will send the Ctrl+Alt+Del key combination.</li>
+</ul>
+</li>
+
+
+
+<li><strong>Setting a Delay</strong>:
+<ul>
+<li>Command: <code>CMD:SET:DELAY:200</code></li>
+
+
+
+<li>This sets a 200 ms delay between keystrokes.</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Supported Keys</h3>
+
+
+
+<ol>
+<li><strong>Modifiers and Control Keys</strong>:
+<ul>
+<li><code>@C</code>: Left Control (CTRL)</li>
+
+
+
+<li><code>@S</code>: Left Shift (SHIFT)</li>
+
+
+
+<li><code>@A</code>: Left Alt (ALT)</li>
+
+
+
+<li><code>CTRL</code>: Left Control (CTRL)</li>
+
+
+
+<li><code>SHIFT</code>: Left Shift (SHIFT)</li>
+
+
+
+<li><code>ALT</code>: Left Alt (ALT)</li>
+
+
+
+<li><code>GUI</code>: Left GUI (Windows key)</li>
+
+
+
+<li><code>ALT_GR</code>: Right Alt (ALT GR)</li>
+
+
+
+<li><code>LEFT_CTRL</code>: Left Control (CTRL)</li>
+
+
+
+<li><code>LEFT_SHIFT</code>: Left Shift (SHIFT)</li>
+
+
+
+<li><code>LEFT_ALT</code>: Left Alt (ALT)</li>
+
+
+
+<li><code>LEFT_GUI</code>: Left GUI (Windows key)</li>
+
+
+
+<li><code>RIGHT_CTRL</code>: Right Control (CTRL)</li>
+
+
+
+<li><code>RIGHT_SHIFT</code>: Right Shift (SHIFT)</li>
+
+
+
+<li><code>RIGHT_ALT</code>: Right Alt (ALT)</li>
+
+
+
+<li><code>RIGHT_GUI</code>: Right GUI (Windows key)</li>
+</ul>
+</li>
+
+
+
+<li><strong>Navigation and Editing Keys</strong>:
+<ul>
+<li><code>UP</code>: Up Arrow</li>
+
+
+
+<li><code>DOWN</code>: Down Arrow</li>
+
+
+
+<li><code>LEFT</code>: Left Arrow</li>
+
+
+
+<li><code>RIGHT</code>: Right Arrow</li>
+
+
+
+<li><code>DEL</code>: Delete</li>
+
+
+
+<li><code>BS</code>: Backspace</li>
+
+
+
+<li><code>BKSP</code>: Backspace</li>
+
+
+
+<li><code>UP_ARROW</code>: Up Arrow</li>
+
+
+
+<li><code>DOWN_ARROW</code>: Down Arrow</li>
+
+
+
+<li><code>LEFT_ARROW</code>: Left Arrow</li>
+
+
+
+<li><code>RIGHT_ARROW</code>: Right Arrow</li>
+
+
+
+<li><code>BACKSPACE</code>: Backspace</li>
+
+
+
+<li><code>TAB</code>: Tab</li>
+
+
+
+<li><code>RETURN</code>: Return (Enter)</li>
+
+
+
+<li><code>MENU</code>: Menu</li>
+
+
+
+<li><code>ESC</code>: Escape</li>
+
+
+
+<li><code>INSERT</code>: Insert</li>
+
+
+
+<li><code>DELETE</code>: Delete</li>
+
+
+
+<li><code>PAGE_UP</code>: Page Up</li>
+
+
+
+<li><code>PAGE_DOWN</code>: Page Down</li>
+
+
+
+<li><code>HOME</code>: Home</li>
+
+
+
+<li><code>END</code>: End</li>
+</ul>
+</li>
+
+
+
+<li><strong>Lock Keys</strong>:
+<ul>
+<li><code>CAPS_LOCK</code>: Caps Lock</li>
+
+
+
+<li><code>NUM_LOCK</code>: Num Lock</li>
+
+
+
+<li><code>SCROLL_LOCK</code>: Scroll Lock</li>
+</ul>
+</li>
+
+
+
+<li><strong>System Keys</strong>:
+<ul>
+<li><code>PRINT_SCREEN</code>: Print Screen</li>
+
+
+
+<li><code>PAUSE</code>: Pause</li>
+
+
+
+<li><code>KP_SLASH</code>: Keypad Slash</li>
+
+
+
+<li><code>KP_ASTERISK</code>: Keypad Asterisk</li>
+
+
+
+<li><code>KP_MINUS</code>: Keypad Minus</li>
+
+
+
+<li><code>KP_PLUS</code>: Keypad Plus</li>
+
+
+
+<li><code>KP_ENTER</code>: Keypad Enter</li>
+
+
+
+<li><code>KP_DOT</code>: Keypad Dot</li>
+
+
+
+<li><code>KP_1</code>: Keypad 1</li>
+
+
+
+<li><code>KP_2</code>: Keypad 2</li>
+
+
+
+<li><code>KP_3</code>: Keypad 3</li>
+
+
+
+<li><code>KP_4</code>: Keypad 4</li>
+
+
+
+<li><code>KP_5</code>: Keypad 5</li>
+
+
+
+<li><code>KP_6</code>: Keypad 6</li>
+
+
+
+<li><code>KP_7</code>: Keypad 7</li>
+
+
+
+<li><code>KP_8</code>: Keypad 8</li>
+
+
+
+<li><code>KP_9</code>: Keypad 9</li>
+
+
+
+<li><code>KP_0</code>: Keypad 0</li>
+</ul>
+</li>
+
+
+
+<li><strong>Function Keys</strong>:
+<ul>
+<li><code>F1</code>: F1</li>
+
+
+
+<li><code>F2</code>: F2</li>
+
+
+
+<li><code>F3</code>: F3</li>
+
+
+
+<li><code>F4</code>: F4</li>
+
+
+
+<li><code>F5</code>: F5</li>
+
+
+
+<li><code>F6</code>: F6</li>
+
+
+
+<li><code>F7</code>: F7</li>
+
+
+
+<li><code>F8</code>: F8</li>
+
+
+
+<li><code>F9</code>: F9</li>
+
+
+
+<li><code>F10</code>: F10</li>
+
+
+
+<li><code>F11</code>: F11</li>
+
+
+
+<li><code>F12</code>: F12</li>
+
+
+
+<li><code>F13</code>: F13</li>
+
+
+
+<li><code>F14</code>: F14</li>
+
+
+
+<li><code>F15</code>: F15</li>
+
+
+
+<li><code>F16</code>: F16</li>
+
+
+
+<li><code>F17</code>: F17</li>
+
+
+
+<li><code>F18</code>: F18</li>
+
+
+
+<li><code>F19</code>: F19</li>
+
+
+
+<li><code>F20</code>: F20</li>
+
+
+
+<li><code>F21</code>: F21</li>
+
+
+
+<li><code>F22</code>: F22</li>
+
+
+
+<li><code>F23</code>: F23</li>
+
+
+
+<li><code>F24</code>: F24</li>
+</ul>
+</li>
+
+
+
+<li><strong>Special Characters</strong>:
+<ul>
+<li><code>\\R</code> or <code>\\N</code>: Return (Enter)</li>
+
+
+
+<li><code>\\B</code>: Backspace</li>
+
+
+
+<li><code>\\T</code>: Tab</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Explanation</h3>
+
+
+
+<p>These keys and their aliases allow you to send various types of key presses and combinations to the Arduino Due, which will then emulate these as keyboard inputs on the connected machine. The commands can be used in the <code>TEXT</code>, <code>KEY</code>, <code>COMBO</code>, <code>HOLD</code>, and other relevant command types to perform actions as if you were physically pressing the keys on a keyboard. This functionality is essential for creating macros or testing keyboard inputs programmatically.</p>
+
+
+
+<p>For example:</p>
+
+
+
+<ul>
+<li>To send a CTRL+C command, you could use: <code>COMBO:@C-C</code> or <code>COMBO:CTRL-C</code></li>
+
+
+
+<li>To type "Hello World" and then press Enter, you could use: <code>LINE:Hello World</code></li>
+
+
+
+<li>To hold the Shift key and type a character, you could use: <code>HOLD:SHIFT</code> followed by <code>KEY:A</code></li>
+</ul>
+
+
+
+<p>This should help you understand the range of keys supported by the program and how to use them in your commands. If you have any more questions or need further assistance, feel free to ask!</p>
+
+
+
+<p></p>
+
+
+
+<p>can you also explain you can connect to the serial port with putty and how to do it. Though the arduino code in real life will be used by a custom Kotlin client I will explain later</p>
+
+
+
+<p></p>
+
+
+
+<h2 class="wp-block-heading">Connecting the Arduino Due cables</h2>
+
+
+
+<p>To connect the Arduino Due and send commands via the serial port, you should connect the USB connection on the left (Its the yellow one with the light on it here, next to the black power barel jack)  to the host computer where the StreamDeck is connected and the one further away (its the red cable here) next to the small reset button to the computer you want the virtual keyboard to send its output to.</p>
+
+
+
+<figure class="wp-block-image size-large"><img src="uploads/2024/07/arduinodueoutput-472x1024.jpg" alt="" class="wp-image-78"/></figure>
+
+
+
+<h2 class="wp-block-heading">Connecting to Arduino Due with PuTTY</h2>
+
+
+
+<p>To interact with the Arduino Due and send commands via the serial port, you can use a terminal program like PuTTY. Below are the steps to set up and use PuTTY for this purpose:</p>
+
+
+
+<h3 class="wp-block-heading">Step-by-Step Guide</h3>
+
+
+
+<ol>
+<li><strong>Install PuTTY</strong>:
+<ul>
+<li>Download PuTTY from the official website: <a href="https://www.putty.org/">PuTTY Download Page</a>.</li>
+
+
+
+<li>Install PuTTY on your Windows machine.</li>
+</ul>
+</li>
+
+
+
+<li><strong>Connect Arduino Due to Your Computer</strong>:
+<ul>
+<li>Plug the Arduino Due into your computer using a USB cable.</li>
+</ul>
+</li>
+
+
+
+<li><strong>Identify the COM Port</strong>:
+<ul>
+<li>Open Device Manager on your computer.</li>
+
+
+
+<li>Under "Ports (COM &amp; LPT)", find the COM port assigned to the Arduino Due (e.g., COM3, COM4).</li>
+</ul>
+</li>
+
+
+
+<li><strong>Configure PuTTY</strong>:
+<ul>
+<li>Launch PuTTY.</li>
+
+
+
+<li>In the "Session" category, select "Serial".</li>
+
+
+
+<li>In the "Serial line" field, enter the COM port number you identified (e.g., COM3).</li>
+
+
+
+<li>Set the "Speed" (baud rate) to 9600 (or the baud rate set in your Arduino code).</li>
+</ul>
+</li>
+
+
+
+<li><strong>Open the Connection</strong>:
+<ul>
+<li>Click "Open" to start the serial session.</li>
+</ul>
+</li>
+</ol>
+
+
+
+<h3 class="wp-block-heading">Using PuTTY</h3>
+
+
+
+<p>Once the connection is established, you can start sending commands to the Arduino Due:</p>
+
+
+
+<ul>
+<li><strong>Send a Command</strong>: Type the command in the PuTTY terminal and press Enter.
+<ul>
+<li>Example: <code>PING</code> (checks if the device is responsive).</li>
+</ul>
+</li>
+
+
+
+<li><strong>View Responses</strong>: Responses from the Arduino Due will appear in the PuTTY terminal.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Sample Commands</h3>
+
+
+
+<p>Here are some sample commands you can try:</p>
+
+
+
+<ul>
+<li><code>HELP</code>: Displays the help text on the PuTTY terminal.</li>
+
+
+
+<li><code>TEXT:Hello, World!</code>: Sends "Hello, World!" as keystrokes.</li>
+
+
+
+<li><code>KEY:ESC</code>: Sends the Escape key press.</li>
+
+
+
+<li><code>CMD:SET:DELAY:200</code>: Sets a 200 ms delay between keystrokes.</li>
+</ul>
+
+
+
+<h3 class="wp-block-heading">Future <strong>Explanation</strong> <strong>of</strong> a Custom Kotlin Client</h3>
+
+
+
+<p>While PuTTY is useful for initial testing and interaction with the Arduino Due, the real functionality is implemented via a custom Kotlin client. This client will streamline sending commands and managing interactions with the Arduino Due, providing a more seamless and automated experience. Detailed instructions and features of the custom Kotlin client will be explained later.</p>
+
+
+
+<p>This guide should help you get started with using PuTTY to communicate with your Arduino Due via the serial port.</p>

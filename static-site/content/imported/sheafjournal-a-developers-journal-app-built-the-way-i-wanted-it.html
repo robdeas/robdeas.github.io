@@ -1,0 +1,269 @@
+<h1 class="wp-block-heading"></h1>
+
+
+
+<p>I've been using note-taking and journalling apps for years. Like most developers I've tried most of them. For a while I settled on a combination of Obsidian and Zim, but neither was quite right Obsidian for is powerful but complex, Zim is simple and has file-based storag but is old.</p>
+
+
+
+<p>So I built my own. This is the story of why, what I built, and what's coming next.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">The Problem With the Alternatives</h2>
+
+
+
+<p><strong>Obsidian</strong> is genuinely impressive software. The plugin ecosystem is vast, the graph view is beautiful, and the community is active. But the more I used it, the more it felt like I was managing the tool rather than using it. Plugin configuration stacks up. And critically Obsidian uses its own filesystem abstraction. Your notes live in a vault that Obsidian controls. Integrating other file types, or building tools that work alongside your notes, is harder than it should be.</p>
+
+
+
+<p><strong>Zim</strong> took the opposite approach, It uses plain files, simple structure, no abstraction between you and your data. I loved that. But Zim is old. The interface shows its age, and it doesn't autosave. For a journal, not autosaving is a dealbreaker. I lost notes. Everyone who uses Zim probably loses notes eventually.</p>
+
+
+
+<p>What I wanted was something in between: file-based like Zim, more capable than Zim, but focused and opinionated rather than trying to be everything like Obsidian.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">What SheafJournal Is (And Isn't)</h2>
+
+
+
+<p>SheafJournal is a <strong>journal app first</strong>. It's not a general knowledge management system. It's not trying to replace Obsidian. It has a clear opinion about what it does:</p>
+
+
+
+<ul class="wp-block-list">
+<li>A daily journal with calendar navigation</li>
+
+
+
+<li>Notes sections for reference material</li>
+
+
+
+<li>A knowledge base for things you want to keep</li>
+
+
+
+<li>Everything autosaved, always</li>
+</ul>
+
+
+
+<p>Because it's focused, it can be opinionated. The interface is designed around journalling workflows rather than trying to accommodate every possible use case. That makes it simpler and faster to use for what it's actually for.</p>
+
+
+
+<p>Your data is just files. Markdown on disk, in a folder structure you can see and understand. Open your notes in any editor. Search them with any tool. Back them up with any backup system. No export step, no vendor lock-in, no company that could change its pricing model or shut down and take your notes with it.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">The Stack: SvelteKit, Bun, TypeScript</h2>
+
+
+
+<p>SheafJournal is built with SvelteKit on the frontend, Bun as the runtime, and TypeScript throughout. For someone who is primarily a backend developer, this appears an interesting choice. But I do full stack work sometimes.</p>
+
+
+
+<p>The honest reason: I wanted to build something fast, and modern web tooling has become genuinely good. SvelteKit's file-based routing means pages and API endpoints live side by side in a structure that makes sense. Bun's startup time is fast enough that the app feels responsive in a way that heavier runtimes don't.</p>
+
+
+
+<p><strong>The TypeScript/Kotlin parallel once surprised me.</strong> When I first started using TypeScript I expected TypeScript to feel like JavaScript with types bolted on. Instead and particularly for the kind of data-manipulation code a backend developer writes, it feels remarkably like Kotlin. Type inference, null safety, interface-based design. Add a library like Radash and you get collection operations that feel like Kotlin's standard library: <code>map</code>, <code>filter</code>, <code>groupBy</code>, <code>sortBy</code> working naturally on typed data. The mental model transfers more than I expected.</p>
+
+
+
+<p>There are differences. TypeScript has no coroutines, but for a local desktop app that's not a constraint. And the tooling, while improving rapidly, doesn't yet match IntelliJ for a Kotlin project. But the gap is smaller than you might expect, and the iteration speed with Bun is genuinely faster than a Spring Boot development cycle.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">How the Data Model Works</h2>
+
+
+
+<p>The knowledge base is a folder on your filesystem:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">Journal/
+  2026/
+    01/
+      15/
+        note-2026-01-15-09-30-00-000.md
+Notes/
+  java/
+    concurrency.md
+Knowledge/
+  architecture/
+    patterns.md
+</pre>
+
+
+
+<p>That's it. Real files, real folders, no abstraction.</p>
+
+
+
+<p>SQLite sits alongside the files but contains only derived metadata — tags, word counts, last viewed timestamps, cached markdown conversions. If the database is deleted, it rebuilds from the files on next startup. The files are the truth. The database is just an index.</p>
+
+
+
+<p>This matters for a reason I find important: <strong>your notes should survive the app</strong>. If SheafJournal stopped working tomorrow, your data would still be there, readable in any text editor, searchable with any tool. That's not true of apps that store data in proprietary formats or databases you can't open.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">Features Worth Knowing About</h2>
+
+
+
+<p><strong>Autosave.</strong> Everything saves as you type. No save button, no lost notes.</p>
+
+
+
+<p><strong>Journal / Notes / Knowledge split.</strong> The three sections have different mental models. The journal is chronological — you navigate by date. Notes and Knowledge are organised by section, more like a wiki. You choose which section fits each piece of information.</p>
+
+
+
+<p><strong>Frontmatter tags.</strong> Notes can have YAML frontmatter:</p>
+
+
+
+<pre class="wp-block-syntaxhighlighter-code">---
+tags: [java, concurrency, quick-note]
+---
+
+Notes from reading the JEP on virtual threads...
+</pre>
+
+
+
+<p>New notes are stamped with <code>quick-note</code> by default — an inbox pattern. You review your quick notes, replace the tag with something meaningful, and they move out of the inbox. It's a lightweight capture-first workflow that doesn't require you to organise before you write.</p>
+
+
+
+<p><strong>Full-text search.</strong> Search across all your journal entries, notes and knowledge in one place. Filter by tag with <code>tag:java</code>. Results show the matching snippet in context so you can see immediately whether it's what you're looking for.</p>
+
+
+
+<p>The search is implemented as a pure JavaScript file walker — no grep, no external tools, works on Windows, Mac and Linux without any dependencies.</p>
+
+
+
+<p><strong>Journal-style todos.</strong> Both the day summary view and individual daily notes support inline tasks. These work differently from a calendar or task manager, and the distinction matters.</p>
+
+
+
+<p>A calendar todo is about the future — something scheduled, something to complete. It carries forward until it's done. A journal todo is about the past — a record of what you worked on that day. If you spent Tuesday afternoon on a database migration, you mark it in Tuesday's journal. Whether the migration is finished is irrelevant; what's recorded is that you worked on it that day. It doesn't carry over, because the journal isn't asking "what do I still need to do?" It's asking "what did I actually do?"</p>
+
+
+
+<p>This makes journal todos useful in a way calendar todos aren't for retrospective work — daily standups, weekly reviews, timesheet reconstruction, understanding where your time actually went rather than where you intended it to go.</p>
+
+
+
+<p><strong>Syntax highlighting and Mermaid diagrams.</strong> Code blocks are highlighted. Mermaid diagram blocks render as diagrams. For a developer's journal these are the two things you reach for most often when documenting something technical.</p>
+
+
+
+<p><strong>Markdown rendered in real time.</strong> The editor and preview update as you type. The conversion is cached in SQLite so switching between notes is instant even for long documents.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">What's Coming</h2>
+
+
+
+<p>The most important upcoming feature is <strong>additional file type support</strong>. Right now SheafJournal works with markdown. The plan is to add support for other file types alongside markdown — documents, spreadsheets, and other formats that a developer's knowledge base accumulates over time. Rather than trying to convert everything to markdown, the goal is to display and link to other file types naturally within the journal structure.</p>
+
+
+
+<p>This is the feature I most wanted from Obsidian and couldn't get cleanly. It's the main reason I built my own tool.</p>
+
+
+
+<p>Other things on the roadmap:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Richer linking between notes and across sections</li>
+
+
+
+<li>Improved tag management eg. renaming, merging, browsing</li>
+
+
+
+<li>Export options for sharing specific notes or sections</li>
+
+
+
+<li>Mobile access to the same files</li>
+</ul>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">The Desktop App Part</h2>
+
+
+
+<p>One more thing worth mentioning: SheafJournal runs as a desktop application. Not via Electron. The app itself is a Bun/SvelteKit server; a small Go launcher starts it, handles authentication, and opens your browser. The result is a quick cold start without the weight of a bundled browser.</p>
+
+
+
+<p>The launcher architecture is its own story. I'll cover it in a separate post. The short version is: I wanted to write pure SvelteKit without learning a native bridge API, so I built a thin launcher that makes that possible.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading">Why Build It at All?</h2>
+
+
+
+<p>Partly because I wanted the tool. Partly because building it taught me things about the stack I wouldn't have learned otherwise. And partly because the act of maintaining a journal only works if the tool gets out of the way — and the only tool guaranteed to get out of the way is one you built and understand completely.</p>
+
+
+
+<p>SheafJournal v0.1 is what I use now. It's not feature-complete. Some things are rough. But it autosaves, it's fast, my data is files I can read without the app, and I can add exactly the features I want in exactly the way I want them.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p><em>SheafJournal is open source.  (GPL and the launcher is Apache 2.0 licence)  The code is at <a href="https://github.com/robdeas">github.com/robdeas</a>/sheafjournal. To run it you will either need the launcher or set environment variables. The launcher architecture will be covered in a separate post: [SheafLauncher: Building Desktop Apps with SvelteKit and Bun, Without Electron].</em></p>
